@@ -725,20 +725,15 @@ svg.icon { display: inline-block; vertical-align: middle; }
               <span class="card-title">ข้อมูลทั่วไป</span>
             </div>
             <div class="form-grid" style="margin-bottom:10px">
-              <div class="fg"><label>เลข Memo</label><input type="text" id="f-memo-no" placeholder="เช่น ORB-2605-001"></div>
-              <div class="fg"><label>ลงวันที่ *</label><input type="date" id="f-date"></div>
+              <div class="fg"><label>เลข Memo</label><input type="text" id="f-memo-no" value="" readonly></div>
+              <div class="fg"><label>ลงวันที่</label><input type="text" id="f-date" readonly></div>
               <div class="fg">
                 <label>โครงการ *</label>
-                <select id="f-project" onchange="toggleOtherProject()">
+                <select id="f-project">
                   <option value="">— เลือกโครงการ —</option>
                   <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
                   <option>Release 2.1</option><option>Release 3</option>
-                  <option value="other">อื่นๆ (กรอกเอง)</option>
                 </select>
-              </div>
-              <div class="fg" id="project-other-wrap" style="display:none">
-                <label>ชื่อโครงการ *</label>
-                <input type="text" id="f-project-other" placeholder="กรอกชื่อโครงการ">
               </div>
               <div class="fg"><label>เรียน *</label><input type="text" id="f-to" placeholder="ประธานเจ้าหน้าที่บริหาร"></div>
             </div>
@@ -780,7 +775,7 @@ svg.icon { display: inline-block; vertical-align: middle; }
               </div>
               <button class="add-btn" onclick="addSLRow()">+ เพิ่ม Software</button>
               <div class="form-grid" style="margin-top:12px">
-                <div class="fg"><label>วันที่แปลงเรท USD→THB</label><input type="date" id="sl-ratedate"></div>
+                <div class="fg"><label>วันที่แปลงเรท USD→THB</label><input type="text" id="sl-ratedate" readonly></div>
                 <div class="fg"><label>จำนวนเงินเป็นตัวอักษร</label><input type="text" placeholder="เช่น สองแสนห้าหมื่นบาทถ้วน"></div>
               </div>
               <div class="total-box"><span class="total-label">Total Amount</span><span class="total-val" id="sl-total">฿0</span></div>
@@ -890,13 +885,13 @@ svg.icon { display: inline-block; vertical-align: middle; }
             <div class="form-grid-3" style="margin-bottom:14px">
               <div class="fg"><label>ชื่อ Reviewer *</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
               <div class="fg"><label>ตำแหน่ง *</label><input type="text" value="ผู้จัดการโครงการ"></div>
-              <div class="fg"><label>วันที่ลงนาม</label><input type="date" id="f-signdate"></div>
+              <div class="fg"><label>วันที่ลงนาม</label><input type="text" id="f-signdate" readonly></div>
             </div>
             <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Approver</div>
             <div class="form-grid-3">
               <div class="fg"><label>ชื่อ Approver *</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
               <div class="fg"><label>ตำแหน่ง *</label><input type="text" id="f-appr-title" value="ประธานเจ้าหน้าที่บริหาร"></div>
-              <div class="fg"><label>วันที่ลงนาม</label><input type="date" id="f-apprdate"></div>
+              <div class="fg"><label>วันที่ลงนาม</label><input type="text" id="f-apprdate" readonly></div>
             </div>
           </div>
 
@@ -992,8 +987,7 @@ svg.icon { display: inline-block; vertical-align: middle; }
 const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 function thaiDate(d) { return `${d.getDate()} ${MONTHS_TH[d.getMonth()]} ${d.getFullYear()+543}`; }
 const TODAY = thaiDate(new Date());
-const todayISO = new Date().toISOString().slice(0,10);
-['f-date','f-signdate','f-apprdate','sl-ratedate'].forEach(id => { const el = document.getElementById(id); if(el) el.value = todayISO; });
+['f-date','f-signdate','f-apprdate','sl-ratedate'].forEach(id => { const el = document.getElementById(id); if(el) el.value = TODAY; });
 
 // ── Type config ──
 let selectedType = null;
@@ -1026,12 +1020,6 @@ function selectType(type, btn) {
   document.getElementById('rev-num').textContent = type === 'sl' ? '5' : '4';
 }
 
-function toggleOtherProject() {
-  const sel = document.getElementById('f-project');
-  const wrap = document.getElementById('project-other-wrap');
-  if(wrap) wrap.style.display = sel.value === 'other' ? 'block' : 'none';
-  if(sel.value === 'other') document.getElementById('f-project-other')?.focus();
-}
 function toggleOther() {
   const sel = document.getElementById('f-reason');
   document.getElementById('other-wrap').style.display = sel.value === 'other' ? 'block' : 'none';
@@ -1142,17 +1130,17 @@ function collectMemoData() {
     type: selectedType,
     typeLabel: TYPE_LABELS[selectedType] || '-',
     memoNo: val('#f-memo-no'),
-    date: dateInput(val('#f-date')),
-    project: (val('#f-project') === 'other' ? val('#f-project-other') : val('#f-project')),
+    date: val('#f-date'),
+    project: val('#f-project'),
     to: val('#f-to'),
     subject: val('#f-subject'),
     reason: selectedReason(),
     reviewerName: reviewerInputs[0] || '-',
     reviewerTitle: reviewerInputs[1] || '-',
-    reviewerDate: dateInput(reviewerInputs[2]) || TODAY,
+    reviewerDate: reviewerInputs[2] || TODAY,
     approverName: reviewerInputs[3] || '-',
     approverTitle: reviewerInputs[4] || '-',
-    approverDate: dateInput(reviewerInputs[5]) || TODAY,
+    approverDate: reviewerInputs[5] || TODAY,
     sections: [],
     total: 0,
     amountWords: ''
@@ -1237,9 +1225,7 @@ function renderMemoPdf(data) {
 function validateMemo(data) {
   const missing = [];
   if(!data.type) missing.push('ประเภท Memo');
-  const projVal = val('#f-project');
-  if(!projVal) missing.push('โครงการ');
-  else if(projVal === 'other' && !val('#f-project-other')) missing.push('ชื่อโครงการ (กรุณากรอกเมื่อเลือก อื่นๆ)');
+  if(!data.project) missing.push('โครงการ');
   if(!data.to) missing.push('เรียน');
   if(!data.reason) missing.push('เหตุผลในการขอ');
   if(missing.length) {
@@ -1314,9 +1300,9 @@ function nextMemoNo() {
   }, 0);
   return `${prefix}-${String(maxSeq + 1).padStart(3, '0')}`;
 }
-function setNextMemoNo(force=false) {
+function setNextMemoNo() {
   const input = document.getElementById('f-memo-no');
-  if(input && (force || !input.value.trim())) input.value = nextMemoNo();
+  if(input) input.value = nextMemoNo();
 }
 function saveMemo(data) {
   const now = new Date().toISOString();
@@ -1336,7 +1322,7 @@ function saveMemo(data) {
 }
 function pendingMemos() {
   return loadMemos()
-    .filter(memo => memo.status === 'pending')
+    .filter(memo => !memo.status || memo.status === 'pending')
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 }
 function badgeClass(type) {
@@ -1366,15 +1352,21 @@ function renderPendingMemos() {
   if(countEl) countEl.textContent = memos.length;
   if(totalEl) totalEl.textContent = money(total);
   if(latestEl) latestEl.textContent = memos[0]?.memoNo || '-';
+  // sync sidebar badge
+  const sideBadge = document.querySelector('#memo-sub .sb-badge');
+  if(sideBadge) sideBadge.textContent = memos.length;
+  // sync sidebar badge
+  const sideBadge = document.querySelector('#memo-sub .sb-badge');
+  if(sideBadge) sideBadge.textContent = memos.length;
   if(!memos.length) {
     list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px"><h3>ยังไม่มี Memo ที่สร้างไว้</h3><p>สร้าง Memo แล้วกด Save & Generate PDF เพื่อให้รายการมาแสดงที่นี่</p></div>`;
     return;
   }
   list.innerHTML = memos.map(memo => `
-    <div class="pend-card" data-memo-no="${esc(memo.memoNo)}">
+    <div class="pend-card">
       <div class="pend-top">
         <div>
-          <div class="pend-title">${esc(memo.memoNo)} — ${esc(memo.typeLabel)}</div>
+          <div class="pend-title">${esc(memo.memoNo)} — ${esc(memo.typeLabel || '-')}</div>
           <div class="pend-meta">
             <span class="badge ${badgeClass(memo.type)}">${esc(String(memo.type || '').toUpperCase())}</span>
             ${esc(memo.project || '-')} &nbsp;&middot;&nbsp; ${esc(memo.reviewerName || '-')} &nbsp;&middot;&nbsp; ${esc(shortDate(memo.createdAt))}
@@ -1399,15 +1391,13 @@ function renderPendingMemos() {
         </button>
       </div>
     </div>`).join('');
-  // Event delegation — attach once after render
   list.onclick = function(e) {
     const btn = e.target.closest('[data-action]');
     if(!btn) return;
     const memoNo = btn.dataset.memo;
-    const action = btn.dataset.action;
-    if(action === 'approve') approveMemo(memoNo);
-    else if(action === 'reject') rejectMemo(memoNo);
-    else if(action === 'pdf') openMemoPdf(memoNo);
+    if(btn.dataset.action === 'approve') approveMemo(memoNo);
+    else if(btn.dataset.action === 'reject') rejectMemo(memoNo);
+    else if(btn.dataset.action === 'pdf') openMemoPdf(memoNo);
   };
 }
 
@@ -1491,11 +1481,8 @@ function renderHistoryMemos() {
       <td><span class="badge ${statusBadgeClass(memo.status)}">${esc(statusLabel(memo.status))}</span></td>
       <td style="text-align:center"><button class="btn-sm" data-action="pdf" data-memo="${esc(memo.memoNo)}" style="padding:3px 8px;margin:0 auto">&#128196;</button></td>
     </tr>`).join('');
-  // Event delegation for history PDF buttons
-  body.closest('table').onclick = function(e) {
-    const btn = e.target.closest('[data-action="pdf"]');
-    if(btn) openMemoPdf(btn.dataset.memo);
-  };
+  const tbl = body.closest('table');
+  if(tbl) tbl.onclick = e => { const b = e.target.closest('[data-action="pdf"]'); if(b) openMemoPdf(b.dataset.memo); };
 }
 function exportHistoryCsv() {
   const memos = filteredHistoryMemos();
