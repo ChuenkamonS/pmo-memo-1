@@ -98,6 +98,7 @@ function swView(id, el, title) {
   if(el) el.classList.add('active');
   if(['create','pending','history'].includes(id)) document.getElementById('nav-memo').classList.add('active');
   if(id === 'budget') renderBudget();
+  if(id === 'license') renderLicense();
 }
 function toggleMemoSub(el) {
   el.classList.add('active');
