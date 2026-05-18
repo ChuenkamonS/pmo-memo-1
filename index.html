@@ -1228,8 +1228,27 @@ function validateMemo(data) {
   if(!data.project) missing.push('โครงการ');
   if(!data.to) missing.push('เรียน');
   if(!data.reason) missing.push('เหตุผลในการขอ');
+  if(!data.reviewerName || data.reviewerName === '-') missing.push('ชื่อ Reviewer');
+  if(!data.approverName || data.approverName === '-') missing.push('ชื่อ Approver');
+  // Type-specific validation
+  if(data.type === 'sl') {
+    const hasItems = Array.from(document.querySelectorAll('#sl-rows .item-row input:first-child')).some(i => i.value.trim());
+    if(!hasItems) missing.push('รายการ Software (อย่างน้อย 1 รายการ)');
+  }
+  if(data.type === 'hw') {
+    const hasItems = Array.from(document.querySelectorAll('#hw-rows .item-row input:first-child')).some(i => i.value.trim());
+    if(!hasItems) missing.push('รายการ Hardware (อย่างน้อย 1 รายการ)');
+  }
+  if(data.type === 'int') {
+    const hasNames = Array.from(document.querySelectorAll('.int-name')).some(i => i.value.trim());
+    if(!hasNames) missing.push('รายชื่อผู้เข้าร่วม (อย่างน้อย 1 คน)');
+  }
+  if(data.type === 'ent') {
+    const customer = document.querySelector('#fs-ent input')?.value?.trim();
+    if(!customer) missing.push('ชื่อลูกค้า / บริษัท');
+  }
   if(missing.length) {
-    alert('กรุณากรอกข้อมูลให้ครบ: ' + missing.join(', '));
+    alert('กรุณากรอกข้อมูลให้ครบ:\n\n• ' + missing.join('\n• '));
     return false;
   }
   return true;
@@ -1498,20 +1517,56 @@ function exportHistoryCsv() {
 async function downloadMemoPdf(data) {
   const stage = document.getElementById('pdf-stage');
   stage.innerHTML = renderMemoPdf(data);
-  const filename = `${data.memoNo || 'memo'}-${data.type || 'draft'}.pdf`;
-  if(window.html2pdf) {
-    try {
-      await html2pdf().set({ margin:0, filename, image:{ type:'jpeg', quality:0.98 }, html2canvas:{ scale:2, useCORS:true }, jsPDF:{ unit:'px', format:[794,1123], orientation:'portrait' } }).from(stage.firstElementChild).save();
-      return;
-    } catch (e) {
-      console.warn('html2pdf failed, falling back to print', e);
+  const filename = (data.memoNo || 'memo') + '-' + (data.type || 'draft') + '.pdf';
+  // Get logo as base64 (optional)
+  let logoBase64 = '';
+  try {
+    const logoImg = document.getElementById('pdf-logo');
+    if(logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+      const c = document.createElement('canvas');
+      c.width = logoImg.naturalWidth; c.height = logoImg.naturalHeight;
+      c.getContext('2d').drawImage(logoImg, 0, 0);
+      logoBase64 = c.toDataURL('image/png');
+    }
+  } catch(e) {}
+  // Try Render PDF server first
+  async function fetchWithRetry(url, options, timeoutMs=55000, retries=2) {
+    for(let attempt=0; attempt<=retries; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        if(attempt > 0) {
+          const btn = document.querySelector('.btn-primary[disabled]');
+          if(btn) btn.textContent = `⏳ กำลัง Generate... (ครั้งที่ ${attempt+1})`;
+        }
+        const r = await fetch(url, {...options, signal: controller.signal});
+        clearTimeout(timer);
+        return r;
+      } catch(e) {
+        clearTimeout(timer);
+        if(attempt === retries) throw e;
+        await new Promise(r => setTimeout(r, 2000));
+      }
     }
   }
-  document.body.classList.add('printing-pdf');
   try {
-    window.print();
-  } finally {
-    document.body.classList.remove('printing-pdf');
+    const html = stage.firstElementChild?.outerHTML || stage.innerHTML;
+    const resp = await fetchWithRetry('https://memo-pdf-server.onrender.com/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html, filename, logoBase64 })
+    });
+    if(!resp.ok) throw new Error('Server error ' + resp.status);
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+    return;
+  } catch(err) {
+    console.warn('PDF server failed, falling back to browser print', err);
+    document.body.classList.add('printing-pdf');
+    try { window.print(); } finally { document.body.classList.remove('printing-pdf'); }
   }
 }
 function openMemoPdf(memoNo) {
@@ -1553,6 +1608,9 @@ function addAcctRow() {
 }
 rebuildAcct();
 initializeMemoApp();
+// Keep Render PDF server warm — ping every 4 minutes
+const PDF_SERVER = 'https://memo-pdf-server.onrender.com';
+setInterval(() => fetch(PDF_SERVER + '/ping').catch(() => {}), 4 * 60 * 1000);
 </script>
 </body>
 </html>
