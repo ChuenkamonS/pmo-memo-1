@@ -1352,14 +1352,10 @@ function renderPendingMemos() {
   if(countEl) countEl.textContent = memos.length;
   if(totalEl) totalEl.textContent = money(total);
   if(latestEl) latestEl.textContent = memos[0]?.memoNo || '-';
-  // sync sidebar badge
-  const sideBadge = document.querySelector('#memo-sub .sb-badge');
-  if(sideBadge) sideBadge.textContent = memos.length;
-  // sync sidebar badge
   const sideBadge = document.querySelector('#memo-sub .sb-badge');
   if(sideBadge) sideBadge.textContent = memos.length;
   if(!memos.length) {
-    list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px"><h3>ยังไม่มี Memo ที่สร้างไว้</h3><p>สร้าง Memo แล้วกด Save & Generate PDF เพื่อให้รายการมาแสดงที่นี่</p></div>`;
+    list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px"><h3>ยังไม่มี Memo ที่รออนุมัติ</h3><p>สร้าง Memo แล้วกด Save & Generate PDF เพื่อให้รายการมาแสดงที่นี่</p></div>`;
     return;
   }
   list.innerHTML = memos.map(memo => `
