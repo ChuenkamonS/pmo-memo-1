@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PMO Dashboard — Orbit Digital</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 :root {
@@ -1062,63 +1061,18 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ LICENSE ════ -->
       <div id="view-license" class="view">
-
-        <!-- Metric cards -->
-        <div class="metric-row" style="grid-template-columns:repeat(4,1fr)">
-          <div class="metric-card">
-            <div class="metric-label">Active Licenses</div>
-            <div class="metric-val" id="lic-active" style="color:var(--blue)">0</div>
-            <div class="metric-sub" id="lic-active-cost"></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">หมดอายุใน ≤ 30 วัน</div>
-            <div class="metric-val" id="lic-expiring" style="color:var(--amber)">0</div>
-            <div class="metric-sub">ต้องต่ออายุเร็วๆ นี้</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">หมดอายุแล้ว</div>
-            <div class="metric-val" id="lic-expired" style="color:var(--red)">0</div>
-            <div class="metric-sub">ต้องดำเนินการด่วน</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">ค่าใช้จ่าย/เดือน</div>
-            <div class="metric-val" id="lic-monthly" style="font-size:18px;margin-top:4px">฿0</div>
-            <div class="metric-sub">รวมทุก SL ที่ active</div>
-          </div>
-        </div>
-
-        <!-- Alert: expiring soon -->
-        <div id="lic-alert-section" style="display:none;margin-bottom:12px">
-          <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
-            ⚠ ต้องต่ออายุเร็วๆ นี้
-          </div>
-          <div id="lic-alert-list"></div>
-        </div>
-
-        <!-- Full registry table -->
-        <div class="card" style="padding:0;overflow:hidden">
-          <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0;display:flex;align-items:center;justify-content:space-between">
-            <span class="card-title">License Registry</span>
-            <span style="font-size:11px;color:var(--text-3);font-weight:400">ดึงจาก SL Memo ที่ Approved แล้ว</span>
-          </div>
-          <table class="hist-table">
-            <thead><tr>
-              <th style="width:22%;padding-left:16px">Software</th>
-              <th style="width:10%">Seats</th>
-              <th style="width:16%">฿/เดือน</th>
-              <th style="width:14%">วันที่ซื้อ</th>
-              <th style="width:14%">หมดอายุ</th>
-              <th style="width:12%">โครงการ</th>
-              <th style="width:12%;text-align:center">สถานะ</th>
-            </tr></thead>
-            <tbody id="lic-table-body"></tbody>
-          </table>
+        <div class="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <h3>License Monitor</h3>
+          <p>Registry, renewal alerts, expiry tracking — coming soon</p>
         </div>
       </div>
 
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /layout -->
+
+<div id="pdf-stage" class="pdf-stage" aria-hidden="true"></div>
 
 <div id="pdf-stage" class="pdf-stage" aria-hidden="true"></div>
 
