@@ -725,7 +725,7 @@ svg.icon { display: inline-block; vertical-align: middle; }
               <span class="card-title">ข้อมูลทั่วไป</span>
             </div>
             <div class="form-grid" style="margin-bottom:10px">
-              <div class="fg"><label>เลข Memo</label><input type="text" id="f-memo-no" value="ORB-2605-001" readonly></div>
+              <div class="fg"><label>เลข Memo</label><input type="text" value="ORB-2605-009" readonly></div>
               <div class="fg"><label>ลงวันที่</label><input type="text" id="f-date" readonly></div>
               <div class="fg">
                 <label>โครงการ *</label>
@@ -1101,10 +1101,9 @@ function rmName(btn, cid) {
   c.querySelectorAll('.name-num').forEach((el,i) => el.textContent=(i+1)+'.');
 }
 
-
 // ── PDF generation ──
 function esc(v) {
-  return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&#34;'}[ch]));
 }
 function val(sel, root=document) { return root.querySelector(sel)?.value?.trim() || ''; }
 function money(n) { return '฿' + (Number(n)||0).toLocaleString('th-TH', { maximumFractionDigits: 2 }); }
