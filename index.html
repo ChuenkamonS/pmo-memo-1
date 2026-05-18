@@ -965,10 +965,97 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ BUDGET ════ -->
       <div id="view-budget" class="view">
-        <div class="placeholder">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          <h3>Budget Monitor</h3>
-          <p>Monthly summary, project breakdown, trend chart — coming soon</p>
+        <!-- Filter row -->
+        <div class="filter-row">
+          <select id="bgt-range" onchange="renderBudget()">
+            <option value="month">เดือนนี้</option>
+            <option value="last-month">เดือนที่แล้ว</option>
+            <option value="3-months">3 เดือน</option>
+            <option value="all">ทั้งหมด</option>
+          </select>
+          <select id="bgt-project" onchange="renderBudget()">
+            <option value="all">ทุกโครงการ</option>
+            <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
+            <option>Release 2.1</option><option>Release 3</option>
+          </select>
+          <button class="btn-export" onclick="exportBudgetCsv()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+
+        <!-- Metric cards -->
+        <div class="metric-row" style="grid-template-columns:repeat(4,1fr)">
+          <div class="metric-card">
+            <div class="metric-label">ยอดรวม (Completed)</div>
+            <div class="metric-val" id="bgt-total" style="font-size:20px">฿0</div>
+            <div class="metric-sub" id="bgt-total-count">0 รายการ</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">รอ Approve (Pending)</div>
+            <div class="metric-val" id="bgt-pending-total" style="font-size:20px;color:var(--amber)">฿0</div>
+            <div class="metric-sub" id="bgt-pending-count">0 รายการ</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">ประเภทที่ใช้มากสุด</div>
+            <div class="metric-val" id="bgt-top-type" style="font-size:16px;margin-top:4px">—</div>
+            <div class="metric-sub" id="bgt-top-type-amt"></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">โครงการที่ใช้มากสุด</div>
+            <div class="metric-val" id="bgt-top-proj" style="font-size:16px;margin-top:4px">—</div>
+            <div class="metric-sub" id="bgt-top-proj-amt"></div>
+          </div>
+        </div>
+
+        <!-- Two-col: by type + by project -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="card">
+            <div class="card-head" style="margin-bottom:10px;padding-bottom:10px">
+              <span class="card-title">แยกตามประเภท</span>
+            </div>
+            <table class="hist-table" id="bgt-type-table">
+              <thead><tr>
+                <th style="width:30%">ประเภท</th>
+                <th style="width:15%">จำนวน</th>
+                <th style="width:30%">ยอดรวม</th>
+                <th style="width:25%">สัดส่วน</th>
+              </tr></thead>
+              <tbody id="bgt-type-body"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-head" style="margin-bottom:10px;padding-bottom:10px">
+              <span class="card-title">แยกตามโครงการ</span>
+            </div>
+            <table class="hist-table" id="bgt-proj-table">
+              <thead><tr>
+                <th style="width:35%">โครงการ</th>
+                <th style="width:15%">จำนวน</th>
+                <th style="width:30%">ยอดรวม</th>
+                <th style="width:20%">สัดส่วน</th>
+              </tr></thead>
+              <tbody id="bgt-proj-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- All completed memos table -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0">
+            <span class="card-title">รายการ Memo ทั้งหมด</span>
+          </div>
+          <table class="hist-table">
+            <thead><tr>
+              <th style="width:22%;padding-left:16px">เลข Memo</th>
+              <th style="width:10%">Type</th>
+              <th style="width:20%">โครงการ</th>
+              <th style="width:16%">วงเงิน</th>
+              <th style="width:14%">วันที่</th>
+              <th style="width:18%">สถานะ</th>
+            </tr></thead>
+            <tbody id="bgt-memo-body"></tbody>
+          </table>
         </div>
       </div>
 
@@ -987,597 +1074,17 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
 <div id="pdf-stage" class="pdf-stage" aria-hidden="true"></div>
 
-<script>
-// ── Date helpers ──
-const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-function thaiDate(d) { return `${d.getDate()} ${MONTHS_TH[d.getMonth()]} ${d.getFullYear()+543}`; }
-const TODAY = thaiDate(new Date());
-const todayISO = new Date().toISOString().slice(0,10);
-['f-date','f-signdate','f-apprdate','sl-ratedate'].forEach(id => { const el = document.getElementById(id); if(el) el.value = todayISO; });
+<div id="pdf-stage" class="pdf-stage" aria-hidden="true"></div>
 
-// ── Type config ──
-let selectedType = null;
-const TYPE_LABELS = { sl:'Software License', hw:'Hardware', int:'Team Activity', ent:'Client Expense', dep:'Deployment' };
-const TYPE_CFG = {
-  sl:  { title:'รายการ Software *', to:'ประธานเจ้าหน้าที่บริหาร', apprTitle:'ประธานเจ้าหน้าที่บริหาร', reasons:['เป็นโปรแกรมที่ได้รับการอนุมัติและใช้งานอยู่เดิม เพื่อให้การดำเนินโครงการเป็นไปอย่างต่อเนื่องและมีประสิทธิภาพ','เป็นโปรแกรมใหม่ที่จำเป็นต้องใช้เพื่อพัฒนาโครงการ','เพื่ออัปเกรดการใช้งานโปรแกรมให้รองรับการทำงานของทีมที่เพิ่มขึ้น'] },
-  hw:  { title:'รายการ Hardware *', to:'ประธานเจ้าหน้าที่บริหาร', apprTitle:'ประธานเจ้าหน้าที่บริหาร', reasons:['เพื่อใช้ในการพัฒนาและทดสอบระบบของโครงการ','เพื่อทดแทนอุปกรณ์เดิมที่เสื่อมสภาพและไม่สามารถใช้งานได้','เพื่อรองรับการขยายทีมและเพิ่มประสิทธิภาพการทำงาน'] },
-  int: { title:'รายชื่อผู้เข้าร่วม *', to:'Project director โครงการ', apprTitle:'ผู้อำนวยการโครงการ', reasons:['เพื่อเสริมสร้างกำลังใจในการปฏิบัติงาน และส่งเสริมการทำงานเป็นทีม','เพื่อเสริมสร้างความสัมพันธ์ในทีมและพัฒนาการทำงานร่วมกัน'] },
-  ent: { title:'รายละเอียดงานเลี้ยงรับรอง', to:'ประธานเจ้าหน้าที่บริหาร', apprTitle:'ประธานเจ้าหน้าที่บริหาร', reasons:['เพื่อขอบคุณลูกค้าในโครงการ','เพื่อเสริมสร้างความสัมพันธ์กับลูกค้า'] },
-  dep: { title:'รายละเอียด Deployment', to:'ผู้อำนวยการโครงการ', apprTitle:'ผู้อำนวยการโครงการ', reasons:['เพื่อความละเอียดในการเบิกแยก Online / Onsite','เพื่อสนับสนุนการ Deployment ให้เป็นไปอย่างราบรื่นและมีประสิทธิภาพ'] }
-};
-
-function selectType(type, btn) {
-  selectedType = type;
-  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  document.querySelectorAll('.fs').forEach(s => s.classList.remove('active'));
-  document.getElementById('fs-'+type).classList.add('active');
-  const cfg = TYPE_CFG[type];
-  document.getElementById('detail-title').textContent = cfg.title;
-  document.getElementById('f-to').value = cfg.to;
-  document.getElementById('f-appr-title').value = cfg.apprTitle;
-  const rs = document.getElementById('f-reason');
-  rs.innerHTML = '<option value="">— เลือกเหตุผล —</option>';
-  cfg.reasons.forEach(r => { const o = document.createElement('option'); o.value = r; o.textContent = r; rs.appendChild(o); });
-  rs.innerHTML += '<option value="other">อื่นๆ (กรอกเอง)</option>';
-  document.getElementById('form-hint').style.display = 'none';
-  document.getElementById('form-body').style.display = 'block';
-  document.getElementById('acct-card').style.display = type === 'sl' ? 'block' : 'none';
-  document.getElementById('rev-num').textContent = type === 'sl' ? '5' : '4';
-}
-
-function toggleOtherProject() {
-  const sel = document.getElementById('f-project');
-  const wrap = document.getElementById('project-other-wrap');
-  if(wrap) wrap.style.display = sel.value === 'other' ? 'block' : 'none';
-  if(sel.value === 'other') document.getElementById('f-project-other')?.focus();
-}
-function toggleOther() {
-  const sel = document.getElementById('f-reason');
-  document.getElementById('other-wrap').style.display = sel.value === 'other' ? 'block' : 'none';
-}
-
-// ── Navigation ──
-function swView(id, el, title) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.sb-sub-item').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
-  document.getElementById('view-'+id).classList.add('active');
-  document.getElementById('page-title').textContent = title;
-  if(el) el.classList.add('active');
-  if(['create','pending','history'].includes(id)) document.getElementById('nav-memo').classList.add('active');
-}
-function toggleMemoSub(el) {
-  el.classList.add('active');
-  swView('create', document.querySelector('#memo-sub .sb-sub-item'), 'Create Memo');
-}
-
-// ── Calcs ──
-function calcSL() {
-  let t = 0;
-  document.querySelectorAll('#sl-rows .item-row').forEach(r => {
-    const p = parseFloat(r.querySelector('.sl-price')?.value)||0;
-    const m = parseInt(r.querySelector('.sl-mo')?.value)||0;
-    const q = parseInt(r.querySelector('.sl-qty')?.value)||0;
-    t += p*m*q;
-  });
-  document.getElementById('sl-total').textContent = '฿'+t.toLocaleString('th-TH');
-}
-function calcHW() {
-  let t = 0;
-  document.querySelectorAll('#hw-rows .item-row').forEach(r => {
-    const p = parseFloat(r.querySelector('.hw-price')?.value)||0;
-    const q = parseInt(r.querySelector('.hw-qty')?.value)||0;
-    t += p*q;
-  });
-  document.getElementById('hw-total').textContent = '฿'+t.toLocaleString('th-TH');
-}
-function calcINT() {
-  const pp = parseFloat(document.getElementById('int-pp')?.value)||0;
-  const n = document.querySelectorAll('.int-name').length;
-  document.getElementById('int-total').textContent = '฿'+(pp*n).toLocaleString('th-TH');
-}
-
-// ── Row helpers ──
-function rmRow(btn, containerId) {
-  const c = document.getElementById(containerId);
-  if(c.querySelectorAll('.item-row').length > 1) btn.closest('.item-row').remove();
-}
-function addSLRow() {
-  const d = document.createElement('div'); d.className='item-row'; d.style.gridTemplateColumns='3fr 1.2fr 0.8fr 0.8fr 30px';
-  d.innerHTML = `<input class="ri" type="text" placeholder="ชื่อ Software"><input class="ri sl-price" type="number" placeholder="ราคา" oninput="calcSL()"><input class="ri sl-mo" type="number" value="12" oninput="calcSL()"><input class="ri sl-qty" type="number" placeholder="จำนวน" oninput="calcSL()"><button class="rm-btn" onclick="rmRow(this,'sl-rows');calcSL()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
-  document.getElementById('sl-rows').appendChild(d);
-}
-function addHWRow() {
-  const d = document.createElement('div'); d.className='item-row'; d.style.gridTemplateColumns='3fr 1.4fr 1fr 30px';
-  d.innerHTML = `<input class="ri" type="text" placeholder="ชื่ออุปกรณ์"><input class="ri hw-price" type="number" placeholder="ราคา" oninput="calcHW()"><input class="ri hw-qty" type="number" placeholder="จำนวน" oninput="calcHW()"><button class="rm-btn" onclick="rmRow(this,'hw-rows');calcHW()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
-  document.getElementById('hw-rows').appendChild(d);
-}
-function addName(cid, cls, doCalc) {
-  const c = document.getElementById(cid);
-  const n = c.querySelectorAll('.row-name').length+1;
-  const d = document.createElement('div'); d.className='row-name';
-  const calcStr = doCalc ? ';calcINT()' : '';
-  d.innerHTML = `<span class="name-num">${n}.</span><input class="ri ${cls}" type="text" placeholder="ชื่อ-นามสกุล ตำแหน่ง" oninput="${doCalc?'calcINT()':''}"><button class="rm-btn" onclick="rmName(this,'${cid}')${calcStr}" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
-  c.appendChild(d);
-}
-function rmName(btn, cid) {
-  const c = document.getElementById(cid);
-  if(c.querySelectorAll('.row-name').length > 1) btn.closest('.row-name').remove();
-  c.querySelectorAll('.name-num').forEach((el,i) => el.textContent=(i+1)+'.');
-}
-
-
-// ── PDF generation ──
-function esc(v) {
-  return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
-}
-function val(sel, root=document) { return root.querySelector(sel)?.value?.trim() || ''; }
-function money(n) { return '฿' + (Number(n)||0).toLocaleString('th-TH', { maximumFractionDigits: 2 }); }
-function dateInput(v) {
-  if(!v) return '-';
-  const d = new Date(v + 'T00:00:00');
-  return Number.isNaN(d.getTime()) ? v : thaiDate(d);
-}
-function selectedReason() {
-  const reason = val('#f-reason');
-  return reason === 'other' ? val('#f-reason-other') : reason;
-}
-function memoSubject(data) {
-  if(data.subject) return data.subject;
-  const project = data.project ? `โครงการ ${data.project}` : 'โครงการ';
-  const map = {
-    sl: `ขออนุมัติจัดซื้อ Software License สำหรับ${project}`,
-    hw: `ขออนุมัติจัดซื้อ Hardware สำหรับ${project}`,
-    int: `ขออนุมัติค่าใช้จ่าย Team Activity สำหรับ${project}`,
-    ent: `ขออนุมัติค่าใช้จ่ายรับรองลูกค้าสำหรับ${project}`,
-    dep: `ขออนุมัติค่าใช้จ่าย Deployment สำหรับ${project}`
-  };
-  return map[data.type] || 'ขออนุมัติ Memo';
-}
-function collectMemoData() {
-  const reviewerCard = document.querySelector('#rev-num')?.closest('.card');
-  const reviewerInputs = Array.from(reviewerCard?.querySelectorAll('input') || []).map(i => i.value.trim());
-  const data = {
-    type: selectedType,
-    typeLabel: TYPE_LABELS[selectedType] || '-',
-    memoNo: val('#f-memo-no'),
-    date: dateInput(val('#f-date')),
-    project: (val('#f-project') === 'other' ? val('#f-project-other') : val('#f-project')),
-    to: val('#f-to'),
-    subject: val('#f-subject'),
-    reason: selectedReason(),
-    reviewerName: reviewerInputs[0] || '-',
-    reviewerTitle: reviewerInputs[1] || '-',
-    reviewerDate: dateInput(reviewerInputs[2]) || TODAY,
-    approverName: reviewerInputs[3] || '-',
-    approverTitle: reviewerInputs[4] || '-',
-    approverDate: dateInput(reviewerInputs[5]) || TODAY,
-    sections: [],
-    total: 0,
-    amountWords: ''
-  };
-  data.subject = memoSubject(data);
-
-  if(data.type === 'sl') {
-    const rows = Array.from(document.querySelectorAll('#sl-rows .item-row')).map((row, i) => {
-      const inputs = row.querySelectorAll('input');
-      const price = Number(inputs[1]?.value) || 0;
-      const months = Number(inputs[2]?.value) || 0;
-      const qty = Number(inputs[3]?.value) || 0;
-      const subtotal = price * months * qty;
-      return { no:i+1, name:inputs[0]?.value.trim() || '-', price, months, qty, subtotal };
-    });
-    data.total = rows.reduce((sum, r) => sum + r.subtotal, 0);
-    data.amountWords = val('#fs-sl .form-grid .fg:nth-child(2) input');
-    data.sections.push({ title:'รายการ Software', html: table(['#','ชื่อ Software','฿/เดือน','เดือน','จำนวน','รวม'], rows.map(r => [r.no, r.name, money(r.price), r.months, r.qty, money(r.subtotal)]), [2,5]) });
-    const acctCols = getAcctCols();
-    const acctRows = Array.from(document.querySelectorAll('#acct-body tr')).map(tr => [val('.acct-email', tr), ...Array.from(tr.querySelectorAll('.acct-val')).map(s => s.value)]).filter(r => r.some(Boolean));
-    if(acctCols.length && acctRows.length) data.sections.push({ title:'ตาราง Account', html: table(['Email', ...acctCols], acctRows, []) });
-  }
-  if(data.type === 'hw') {
-    const rows = Array.from(document.querySelectorAll('#hw-rows .item-row')).map((row, i) => {
-      const inputs = row.querySelectorAll('input');
-      const price = Number(inputs[1]?.value) || 0;
-      const qty = Number(inputs[2]?.value) || 0;
-      const subtotal = price * qty;
-      return { no:i+1, name:inputs[0]?.value.trim() || '-', price, qty, subtotal };
-    });
-    data.total = rows.reduce((sum, r) => sum + r.subtotal, 0);
-    data.amountWords = val('#fs-hw .form-grid .fg:nth-child(1) input');
-    const owner = val('#fs-hw .form-grid .fg:nth-child(2) input');
-    data.sections.push({ title:'รายการ Hardware', html: table(['#','ชื่ออุปกรณ์','ราคา/ชิ้น','จำนวน','รวม'], rows.map(r => [r.no, r.name, money(r.price), r.qty, money(r.subtotal)]), [2,4]) });
-    if(owner) data.sections.push({ title:'ผู้รับผิดชอบดูแลอุปกรณ์', html:`<p>${esc(owner)}</p>` });
-  }
-  if(data.type === 'int') {
-    const fs = document.querySelector('#fs-int');
-    const inputs = fs.querySelectorAll('input');
-    const perPerson = Number(inputs[2]?.value) || 0;
-    const names = Array.from(fs.querySelectorAll('.int-name')).map((i, idx) => [idx+1, i.value.trim() || '-']);
-    data.total = perPerson * names.length;
-    data.amountWords = inputs[3]?.value.trim() || '';
-    data.sections.push({ title:'รายละเอียดกิจกรรม', html:`<p>ไตรมาส / ครั้งที่: ${esc(inputs[0]?.value || '-')}<br>วันที่จัดกิจกรรม: ${esc(dateInput(inputs[1]?.value))}<br>วงเงินต่อคน: ${esc(money(perPerson))}</p>` });
-    data.sections.push({ title:'รายชื่อผู้เข้าร่วม', html: table(['#','ชื่อ-นามสกุล / ตำแหน่ง'], names, []) });
-  }
-  if(data.type === 'ent') {
-    const inputs = document.querySelectorAll('#fs-ent input');
-    const total = Number(inputs[5]?.value) || 0;
-    data.total = total;
-    data.amountWords = inputs[6]?.value.trim() || '';
-    data.sections.push({ title:'รายละเอียดงานเลี้ยงรับรอง', html:`<p>ลูกค้า / บริษัท: ${esc(inputs[0]?.value || '-')}<br>วันที่: ${esc(dateInput(inputs[1]?.value))} เวลา ${esc(inputs[2]?.value || '-')}<br>สถานที่: ${esc(inputs[3]?.value || '-')}<br>จำนวนผู้เข้าร่วม: ${esc(inputs[4]?.value || '-')} คน</p>` });
-  }
-  if(data.type === 'dep') {
-    const fs = document.querySelector('#fs-dep');
-    const inputs = fs.querySelectorAll('input');
-    data.amountWords = inputs[4]?.value.trim() || '';
-    const names = Array.from(fs.querySelectorAll('.dep-name')).map((i, idx) => [idx+1, i.value.trim() || '-']);
-    data.sections.push({ title:'รายละเอียด Deployment', html:`<p>ช่วงวันที่ Deploy: ${esc(dateInput(inputs[0]?.value))} - ${esc(dateInput(inputs[1]?.value))}<br>สถานที่: ${esc(inputs[2]?.value || '-')}<br>รูปแบบ: ${esc(fs.querySelector('select')?.value || '-')}<br>วงเงินอำนาจอนุมัติ: ${esc(inputs[5]?.value || '-')} บาท</p>` });
-    if(names.length) data.sections.push({ title:'รายชื่อพนักงานที่ Deploy', html: table(['#','ชื่อ-นามสกุล / ตำแหน่ง'], names, []) });
-  }
-  return data;
-}
-function table(headers, rows, numericIndexes=[]) {
-  return `<table class="pdf-table"><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map((c,i) => `<td class="${numericIndexes.includes(i) ? 'num' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-}
-function renderMemoPdf(data) {
-  const amountLine = data.total ? `<div class="pdf-total"><span>รวมเป็นเงิน</span><span>${esc(money(data.total))}</span></div>` : '';
-  const wordsLine = data.amountWords ? `<p class="pdf-muted">(${esc(data.amountWords)})</p>` : '';
-  return `<div class="pdf-page">
-    <div class="pdf-head"><div><div class="pdf-brand">Orbit Digital</div><div class="pdf-subbrand">PMO Memo Approval</div></div><div class="pdf-memo-no">${esc(data.memoNo)}<br>${esc(data.typeLabel)}</div></div>
-    <div class="pdf-title">บันทึกข้อความ</div>
-    <div class="pdf-meta"><div class="pdf-label">วันที่</div><div>${esc(data.date)}</div><div class="pdf-label">เรื่อง</div><div>${esc(data.subject)}</div><div class="pdf-label">เรียน</div><div>${esc(data.to || '-')}</div><div class="pdf-label">โครงการ</div><div>${esc(data.project || '-')}</div></div>
-    <p>ด้วยฝ่าย PMO มีความประสงค์ขออนุมัติรายการตามรายละเอียดด้านล่าง เพื่อสนับสนุนการดำเนินงานของโครงการให้เป็นไปตามแผนงาน</p>
-    <div class="pdf-section"><div class="pdf-section-title">เหตุผลในการขออนุมัติ</div><p>${esc(data.reason || '-')}</p></div>
-    ${data.sections.map(s => `<div class="pdf-section"><div class="pdf-section-title">${esc(s.title)}</div>${s.html}</div>`).join('')}
-    ${amountLine}${wordsLine}
-    <div class="pdf-alert">เอกสารนี้สร้างจากระบบ PMO Dashboard โดยอัตโนมัติ กรุณาตรวจสอบรายละเอียดก่อนนำส่งเพื่ออนุมัติจริง</div>
-    <div class="pdf-signatures"><div class="pdf-sign-box"><div class="pdf-sign-line"></div><div>${esc(data.reviewerName)}</div><div class="pdf-muted">${esc(data.reviewerTitle)}</div><div class="pdf-muted">${esc(data.reviewerDate)}</div></div><div class="pdf-sign-box"><div class="pdf-sign-line"></div><div>${esc(data.approverName)}</div><div class="pdf-muted">${esc(data.approverTitle)}</div><div class="pdf-muted">${esc(data.approverDate)}</div></div></div>
-  </div>`;
-}
-function validateMemo(data) {
-  const missing = [];
-  if(!data.type) missing.push('ประเภท Memo');
-  if(!val('#f-project')) missing.push('โครงการ');
-  else if(val('#f-project') === 'other' && !val('#f-project-other')) missing.push('ชื่อโครงการ (กรุณากรอกเมื่อเลือก อื่นๆ)');
-  if(!data.to) missing.push('เรียน');
-  if(!data.reason) missing.push('เหตุผลในการขอ');
-  if(missing.length) {
-    alert('กรุณากรอกข้อมูลให้ครบ: ' + missing.join(', '));
-    return false;
-  }
-  return true;
-}
-async function generateMemoPdf() {
-  const data = collectMemoData();
-  if(!validateMemo(data)) return;
-  try {
-    const saved = saveMemo(data);
-    renderPendingMemos();
-    await downloadMemoPdf(saved);
-    setNextMemoNo();
-    alert(`บันทึก ${saved.memoNo} ใน Pending แล้ว และสร้าง PDF เรียบร้อย`);
-  } catch (e) {
-    console.error('Cannot save memo or generate PDF', e);
-    alert('เกิดข้อผิดพลาดระหว่างบันทึกหรือสร้าง PDF กรุณาลองใหม่อีกครั้ง');
-  }
-}
-function resetMemoForm() {
-  if(confirm('ล้างข้อมูลที่กรอกใน Create Memo หรือไม่?')) location.reload();
-}
-
-// ── Local memo storage (Milestone 1) ──
-const MEMO_STORAGE_KEY = 'orbit-pmo-memos-v1';
-let memoryMemos = [];
-function canUseLocalStorage() {
-  try {
-    const testKey = `${MEMO_STORAGE_KEY}-test`;
-    localStorage.setItem(testKey, '1');
-    localStorage.removeItem(testKey);
-    return true;
-  } catch (e) {
-    console.warn('localStorage is unavailable; memos will only persist until reload', e);
-    return false;
-  }
-}
-const HAS_LOCAL_STORAGE = canUseLocalStorage();
-function loadMemos() {
-  if(!HAS_LOCAL_STORAGE) return memoryMemos;
-  try {
-    const parsed = JSON.parse(localStorage.getItem(MEMO_STORAGE_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    console.warn('Cannot load memos from localStorage', e);
-    return memoryMemos;
-  }
-}
-function storeMemos(memos) {
-  memoryMemos = Array.isArray(memos) ? memos : [];
-  if(!HAS_LOCAL_STORAGE) return;
-  try {
-    localStorage.setItem(MEMO_STORAGE_KEY, JSON.stringify(memoryMemos));
-  } catch (e) {
-    console.warn('Cannot save memos to localStorage; using in-memory fallback', e);
-  }
-}
-function currentMemoPrefix() {
-  const d = new Date();
-  const yy = String(d.getFullYear()).slice(-2);
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  return `ORB-${yy}${mm}`;
-}
-function nextMemoNo() {
-  const prefix = currentMemoPrefix();
-  const maxSeq = loadMemos().reduce((max, memo) => {
-    const match = String(memo.memoNo || '').match(new RegExp(`^${prefix}-(\\d{3})$`));
-    return match ? Math.max(max, Number(match[1])) : max;
-  }, 0);
-  return `${prefix}-${String(maxSeq + 1).padStart(3, '0')}`;
-}
-function setNextMemoNo() {
-  const input = document.getElementById('f-memo-no');
-  if(input && !input.value.trim()) input.value = nextMemoNo();
-}
-function saveMemo(data) {
-  const now = new Date().toISOString();
-  const memos = loadMemos();
-  const existingIndex = memos.findIndex(memo => memo.memoNo === data.memoNo);
-  const saved = {
-    ...data,
-    id: data.memoNo,
-    status: 'pending',
-    createdAt: existingIndex >= 0 ? memos[existingIndex].createdAt : now,
-    updatedAt: now
-  };
-  if(existingIndex >= 0) memos[existingIndex] = saved;
-  else memos.push(saved);
-  storeMemos(memos);
-  return saved;
-}
-function pendingMemos() {
-  return loadMemos()
-    .filter(memo => !memo.status || memo.status === 'pending')
-    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-}
-function badgeClass(type) {
-  return { sl:'badge-blue', hw:'badge-gray', int:'badge-green', ent:'badge-amber', dep:'badge-purple' }[type] || 'badge-gray';
-}
-function shortDate(iso) {
-  if(!iso) return '-';
-  const d = new Date(iso);
-  if(Number.isNaN(d.getTime())) return '-';
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2, '0')}/${String(d.getFullYear()+543).slice(-2)}`;
-}
-function pendingAge(iso) {
-  if(!iso) return 'รอ 0 วัน';
-  const created = new Date(iso);
-  if(Number.isNaN(created.getTime())) return 'รอ 0 วัน';
-  const days = Math.max(0, Math.floor((Date.now() - created.getTime()) / 86400000));
-  return `รอ ${days} วัน`;
-}
-function renderPendingMemos() {
-  const list = document.getElementById('pending-list');
-  if(!list) return;
-  const memos = pendingMemos();
-  const total = memos.reduce((sum, memo) => sum + (Number(memo.total) || 0), 0);
-  const countEl = document.getElementById('pending-count');
-  const totalEl = document.getElementById('pending-total');
-  const latestEl = document.getElementById('pending-latest');
-  if(countEl) countEl.textContent = memos.length;
-  if(totalEl) totalEl.textContent = money(total);
-  if(latestEl) latestEl.textContent = memos[0]?.memoNo || '-';
-  const sideBadge = document.querySelector('#memo-sub .sb-badge');
-  if(sideBadge) sideBadge.textContent = memos.length;
-  if(!memos.length) {
-    list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px"><h3>ยังไม่มี Memo ที่รออนุมัติ</h3><p>สร้าง Memo แล้วกด Save & Generate PDF เพื่อให้รายการมาแสดงที่นี่</p></div>`;
-    return;
-  }
-  list.innerHTML = memos.map(memo => `
-    <div class="pend-card">
-      <div class="pend-top">
-        <div>
-          <div class="pend-title">${esc(memo.memoNo)} — ${esc(memo.typeLabel || '-')}</div>
-          <div class="pend-meta">
-            <span class="badge ${badgeClass(memo.type)}">${esc(String(memo.type || '').toUpperCase())}</span>
-            ${esc(memo.project || '-')} &nbsp;&middot;&nbsp; ${esc(memo.reviewerName || '-')} &nbsp;&middot;&nbsp; ${esc(shortDate(memo.createdAt))}
-            <span class="badge badge-amber">${esc(pendingAge(memo.createdAt))}</span>
-          </div>
-        </div>
-        <div class="pend-amount">${esc(money(memo.total || 0))}</div>
-      </div>
-      <div class="pend-detail">${esc(memo.subject || '-')} &nbsp;&middot;&nbsp; เหตุผล: ${esc(memo.reason || '-')}</div>
-      <div class="pend-actions">
-        <button class="btn-approve" data-action="approve" data-memo="${esc(memo.memoNo)}">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Approve
-        </button>
-        <button class="btn-reject" data-action="reject" data-memo="${esc(memo.memoNo)}">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Reject
-        </button>
-        <button class="btn-sm" data-action="pdf" data-memo="${esc(memo.memoNo)}">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          ดู PDF
-        </button>
-      </div>
-    </div>`).join('');
-  list.onclick = function(e) {
-    const btn = e.target.closest('[data-action]');
-    if(!btn) return;
-    const memoNo = btn.dataset.memo;
-    if(btn.dataset.action === 'approve') approveMemo(memoNo);
-    else if(btn.dataset.action === 'reject') rejectMemo(memoNo);
-    else if(btn.dataset.action === 'pdf') openMemoPdf(memoNo);
-  };
-}
-
-function updateMemoStatus(memoNo, status, extra = {}) {
-  const memos = loadMemos();
-  const idx = memos.findIndex(memo => memo.memoNo === memoNo);
-  if(idx < 0) { alert('ไม่พบ Memo ที่เลือก'); return null; }
-  memos[idx] = { ...memos[idx], ...extra, status, updatedAt: new Date().toISOString() };
-  if(status === 'completed') memos[idx].approvedAt = memos[idx].updatedAt;
-  if(status === 'rejected') memos[idx].rejectedAt = memos[idx].updatedAt;
-  storeMemos(memos);
-  renderPendingMemos();
-  renderHistoryMemos();
-  return memos[idx];
-}
-function approveMemo(memoNo) {
-  if(!confirm(`Approve ${memoNo}?`)) return;
-  const memo = updateMemoStatus(memoNo, 'completed');
-  if(memo) alert(`${memoNo} ถูก Approve และย้ายไป History แล้ว`);
-}
-function rejectMemo(memoNo) {
-  const reason = prompt(`ระบุเหตุผล Reject สำหรับ ${memoNo}`);
-  if(reason === null) return;
-  const memo = updateMemoStatus(memoNo, 'rejected', { rejectionReason: reason.trim() || '-' });
-  if(memo) alert(`${memoNo} ถูก Reject และย้ายไป History แล้ว`);
-}
-function historyMemos() {
-  return loadMemos()
-    .filter(memo => ['completed', 'rejected'].includes(memo.status))
-    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
-}
-function statusLabel(status) {
-  return status === 'completed' ? 'Completed' : status === 'rejected' ? 'Rejected' : status;
-}
-function statusBadgeClass(status) {
-  return status === 'completed' ? 'badge-green' : status === 'rejected' ? 'badge-red' : 'badge-gray';
-}
-function inHistoryRange(memo, range) {
-  if(range === 'all') return true;
-  const dt = new Date(memo.updatedAt || memo.createdAt || 0);
-  if(Number.isNaN(dt.getTime())) return false;
-  const now = new Date();
-  if(range === 'month') return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth();
-  if(range === 'last-month') {
-    const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return dt.getFullYear() === last.getFullYear() && dt.getMonth() === last.getMonth();
-  }
-  if(range === '3-months') {
-    const cutoff = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-    return dt >= cutoff;
-  }
-  return true;
-}
-function filteredHistoryMemos() {
-  const status = val('#hist-status') || 'all';
-  const type = val('#hist-type') || 'all';
-  const project = val('#hist-project') || 'all';
-  const range = val('#hist-range') || 'month';
-  return historyMemos().filter(memo =>
-    (status === 'all' || memo.status === status) &&
-    (type === 'all' || memo.type === type) &&
-    (project === 'all' || memo.project === project) &&
-    inHistoryRange(memo, range)
-  );
-}
-function renderHistoryMemos() {
-  const body = document.getElementById('history-body');
-  if(!body) return;
-  const memos = filteredHistoryMemos();
-  if(!memos.length) {
-    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:34px 16px;color:var(--text-3)">ยังไม่มี Memo ใน History ตามเงื่อนไขที่เลือก</td></tr>`;
-    return;
-  }
-  body.innerHTML = memos.map(memo => `
-    <tr>
-      <td class="mono" style="padding-left:16px">${esc(memo.memoNo)}</td>
-      <td><span class="badge ${badgeClass(memo.type)}">${esc(String(memo.type || '').toUpperCase())}</span></td>
-      <td>${esc(memo.project || '-')}</td>
-      <td class="mono">${esc(money(memo.total || 0))}</td>
-      <td>${esc(shortDate(memo.updatedAt || memo.createdAt))}</td>
-      <td><span class="badge ${statusBadgeClass(memo.status)}">${esc(statusLabel(memo.status))}</span></td>
-      <td style="text-align:center"><button class="btn-sm" data-action="pdf" data-memo="${esc(memo.memoNo)}" style="padding:3px 8px;margin:0 auto">&#128196;</button></td>
-    </tr>`).join('');
-  const tbl = body.closest('table');
-  if(tbl) tbl.onclick = e => { const b = e.target.closest('[data-action="pdf"]'); if(b) openMemoPdf(b.dataset.memo); };
-}
-function exportHistoryCsv() {
-  const memos = filteredHistoryMemos();
-  if(!memos.length) { alert('ไม่มีข้อมูล History สำหรับ Export'); return; }
-  const headers = ['Memo No','Type','Project','Amount','Status','Created At','Updated At','Subject','Reason','Rejection Reason'];
-  const csvRows = [headers, ...memos.map(memo => [
-    memo.memoNo || '',
-    String(memo.type || '').toUpperCase(),
-    memo.project || '',
-    Number(memo.total) || 0,
-    statusLabel(memo.status),
-    memo.createdAt || '',
-    memo.updatedAt || '',
-    memo.subject || '',
-    memo.reason || '',
-    memo.rejectionReason || ''
-  ])];
-  const csv = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `memo-history-${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-async function downloadMemoPdf(data) {
-  const stage = document.getElementById('pdf-stage');
-  stage.innerHTML = renderMemoPdf(data);
-  const filename = `${data.memoNo || 'memo'}-${data.type || 'draft'}.pdf`;
-  if(window.html2pdf) {
-    try {
-      await html2pdf().set({ margin:0, filename, image:{ type:'jpeg', quality:0.98 }, html2canvas:{ scale:2, useCORS:true }, jsPDF:{ unit:'px', format:[794,1123], orientation:'portrait' } }).from(stage.firstElementChild).save();
-      return;
-    } catch (e) {
-      console.warn('html2pdf failed, falling back to print', e);
-    }
-  }
-  document.body.classList.add('printing-pdf');
-  try {
-    window.print();
-  } finally {
-    document.body.classList.remove('printing-pdf');
-  }
-}
-function openMemoPdf(memoNo) {
-  const memo = loadMemos().find(m => m.memoNo === memoNo);
-  if(!memo) { alert('ไม่พบ Memo ที่เลือก'); return; }
-  downloadMemoPdf(memo);
-}
-function initializeMemoApp() {
-  setNextMemoNo();
-  renderPendingMemos();
-  renderHistoryMemos();
-}
-
-// ── Account table ──
-function getAcctCols() { return Array.from(document.querySelectorAll('.acct-col')).map(i=>i.value.trim()).filter(c=>c); }
-function rebuildAcct() {
-  const cols = getAcctCols(); const show = cols.length ? cols : ['Col 1'];
-  const head = document.getElementById('acct-head');
-  const body = document.getElementById('acct-body');
-  head.innerHTML = `<tr style="background:var(--bg)"><th style="padding:6px 10px;text-align:left;border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase">Email</th>${show.map(c=>`<th style="padding:6px 10px;text-align:center;border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;width:80px">${c}</th>`).join('')}<th style="width:36px;border:1px solid var(--border)"></th></tr>`;
-  Array.from(body.querySelectorAll('tr')).forEach(tr => {
-    const email = tr.querySelector('.acct-email')?.value||'';
-    const vals = Array.from(tr.querySelectorAll('.acct-val')).map(s=>s.value);
-    tr.innerHTML = buildAcctRow(email, vals, show.length);
-  });
-  if(!body.children.length) addAcctRow();
-}
-function buildAcctRow(email, vals, n) {
-  let h = `<td style="padding:3px 6px;border:1px solid var(--border)"><input type="text" class="ri acct-email" placeholder="email@orbitdigital.co.th" value="${email}" style="font-size:11px;padding:3px 7px"></td>`;
-  for(let i=0;i<n;i++) h += `<td style="padding:3px 6px;border:1px solid var(--border);text-align:center"><select class="acct-val" style="font-size:11px;padding:2px 4px;width:100%;border:1px solid var(--border-md);border-radius:4px"><option${vals[i]==='-'||!vals[i]?' selected':''}>-</option><option${vals[i]==='✓'?' selected':''}>✓</option></select></td>`;
-  h += `<td style="padding:3px 4px;border:1px solid var(--border);text-align:center"><button class="rm-btn" onclick="this.closest('tr').remove()" style="width:24px;height:24px" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></td>`;
-  return h;
-}
-function addAcctRow() {
-  const cols = getAcctCols(); const n = cols.length||1;
-  const tr = document.createElement('tr');
-  tr.innerHTML = buildAcctRow('', [], n);
-  document.getElementById('acct-body').appendChild(tr);
-}
-rebuildAcct();
-initializeMemoApp();
-</script>
+<!-- Core: shared utils, storage, navigation, PDF -->
+<script src="app.js"></script>
+<!-- Views: loaded in dependency order -->
+<script src="views/create.js"></script>
+<script src="views/pending.js"></script>
+<script src="views/history.js"></script>
+<script src="views/budget.js"></script>
+<script src="views/license.js"></script>
+<!-- Boot -->
+<script>initApp();</script>
 </body>
 </html>

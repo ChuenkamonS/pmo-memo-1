@@ -1,11 +1,14 @@
-// ─────────────────────────────────────────────
-//  app.js  —  shared utils, storage, nav, PDF
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────
+// app.js — shared utils, storage, nav, PDF
+// ─────────────────────────────────────────
 
-// ── Shared utils ──
+// ── Date helpers ──
 const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 function thaiDate(d) { return `${d.getDate()} ${MONTHS_TH[d.getMonth()]} ${d.getFullYear()+543}`; }
 const TODAY = thaiDate(new Date());
+const todayISO = new Date().toISOString().slice(0,10);
+
+// ── Shared utils ──
 function esc(v) { return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
 function val(sel, root=document) { return root.querySelector(sel)?.value?.trim() || ''; }
 function money(n) { return '฿' + (Number(n)||0).toLocaleString('th-TH', { maximumFractionDigits: 2 }); }
@@ -29,21 +32,21 @@ function table(headers, rows, numericIndexes=[]) {
 
 // ── Storage ──
 const MEMO_KEY = 'orbit-pmo-memos-v1';
-let _memoryMemos = [];
-function canUseLS() {
+let _memMemos = [];
+function canUseLocalStorage() {
   try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return true; }
   catch(e) { return false; }
 }
-const HAS_LS = canUseLS();
+const HAS_LS = canUseLocalStorage();
 function loadMemos() {
-  if(!HAS_LS) return _memoryMemos;
-  try { const p = JSON.parse(localStorage.getItem(MEMO_KEY)||'[]'); return Array.isArray(p) ? p : []; }
-  catch(e) { return _memoryMemos; }
+  if(!HAS_LS) return _memMemos;
+  try { const p = JSON.parse(localStorage.getItem(MEMO_KEY)||'[]'); return Array.isArray(p)?p:[]; }
+  catch(e) { return _memMemos; }
 }
 function storeMemos(memos) {
-  _memoryMemos = Array.isArray(memos) ? memos : [];
+  _memMemos = Array.isArray(memos) ? memos : [];
   if(!HAS_LS) return;
-  try { localStorage.setItem(MEMO_KEY, JSON.stringify(_memoryMemos)); }
+  try { localStorage.setItem(MEMO_KEY, JSON.stringify(_memMemos)); }
   catch(e) { console.warn('localStorage write failed'); }
 }
 function currentMemoPrefix() {
@@ -52,7 +55,7 @@ function currentMemoPrefix() {
 }
 function nextMemoNo() {
   const prefix = currentMemoPrefix();
-  const max = loadMemos().reduce((m, memo) => {
+  const max = loadMemos().reduce((m,memo) => {
     const match = String(memo.memoNo||'').match(new RegExp(`^${prefix}-(\\d{3})$`));
     return match ? Math.max(m, Number(match[1])) : m;
   }, 0);
@@ -60,25 +63,25 @@ function nextMemoNo() {
 }
 function setNextMemoNo() {
   const el = document.getElementById('f-memo-no');
-  if(el) el.value = nextMemoNo();
+  if(el && !el.value.trim()) el.value = nextMemoNo();
 }
 function saveMemo(data) {
   const now = new Date().toISOString();
   const memos = loadMemos();
   const idx = memos.findIndex(m => m.memoNo === data.memoNo);
-  const saved = { ...data, id: data.memoNo, status:'pending',
-    createdAt: idx >= 0 ? memos[idx].createdAt : now, updatedAt: now };
-  if(idx >= 0) memos[idx] = saved; else memos.push(saved);
+  const saved = { ...data, id:data.memoNo, status:'pending',
+    createdAt: idx>=0 ? memos[idx].createdAt : now, updatedAt: now };
+  if(idx>=0) memos[idx]=saved; else memos.push(saved);
   storeMemos(memos);
   return saved;
 }
 function updateMemoStatus(memoNo, status, extra={}) {
   const memos = loadMemos();
   const idx = memos.findIndex(m => m.memoNo === memoNo);
-  if(idx < 0) { alert('ไม่พบ Memo ที่เลือก'); return null; }
+  if(idx<0) { alert('ไม่พบ Memo ที่เลือก'); return null; }
   memos[idx] = { ...memos[idx], ...extra, status, updatedAt: new Date().toISOString() };
-  if(status === 'completed') memos[idx].approvedAt = memos[idx].updatedAt;
-  if(status === 'rejected')  memos[idx].rejectedAt = memos[idx].updatedAt;
+  if(status==='completed') memos[idx].approvedAt = memos[idx].updatedAt;
+  if(status==='rejected')  memos[idx].rejectedAt = memos[idx].updatedAt;
   storeMemos(memos);
   renderPendingMemos();
   renderHistoryMemos();
@@ -93,8 +96,8 @@ function swView(id, el, title) {
   document.getElementById('view-'+id).classList.add('active');
   document.getElementById('page-title').textContent = title;
   if(el) el.classList.add('active');
-  if(['create','pending','history'].includes(id))
-    document.getElementById('nav-memo').classList.add('active');
+  if(['create','pending','history'].includes(id)) document.getElementById('nav-memo').classList.add('active');
+  if(id === 'budget') renderBudget();
 }
 function toggleMemoSub(el) {
   el.classList.add('active');
@@ -104,7 +107,7 @@ function toggleMemoSub(el) {
 // ── PDF ──
 function renderMemoPdf(data) {
   const amountLine = data.total ? `<div class="pdf-total"><span>รวมเป็นเงิน</span><span>${esc(money(data.total))}</span></div>` : '';
-  const wordsLine  = data.amountWords ? `<p class="pdf-muted">(${esc(data.amountWords)})</p>` : '';
+  const wordsLine = data.amountWords ? `<p class="pdf-muted">(${esc(data.amountWords)})</p>` : '';
   return `<div class="pdf-page">
     <div class="pdf-head"><div><div class="pdf-brand">Orbit Digital</div><div class="pdf-subbrand">PMO Memo Approval</div></div><div class="pdf-memo-no">${esc(data.memoNo)}<br>${esc(data.typeLabel)}</div></div>
     <div class="pdf-title">บันทึกข้อความ</div>
@@ -121,23 +124,12 @@ async function downloadMemoPdf(data) {
   const stage = document.getElementById('pdf-stage');
   stage.innerHTML = renderMemoPdf(data);
   const filename = (data.memoNo||'memo') + '-' + (data.type||'draft') + '.pdf';
-  let logoBase64 = '';
-  try {
-    const img = document.getElementById('pdf-logo');
-    if(img && img.complete && img.naturalWidth > 0) {
-      const c = document.createElement('canvas');
-      c.width = img.naturalWidth; c.height = img.naturalHeight;
-      c.getContext('2d').drawImage(img,0,0);
-      logoBase64 = c.toDataURL('image/png');
-    }
-  } catch(e) {}
   async function fetchWithRetry(url, opts, ms=55000, retries=2) {
     for(let i=0; i<=retries; i++) {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), ms);
       try {
-        if(i > 0) { const b = document.querySelector('.btn-primary[disabled]'); if(b) b.textContent=`⏳ ครั้งที่ ${i+1}...`; }
-        const r = await fetch(url, {...opts, signal: ctrl.signal});
+        const r = await fetch(url, {...opts, signal:ctrl.signal});
         clearTimeout(t); return r;
       } catch(e) { clearTimeout(t); if(i===retries) throw e; await new Promise(r=>setTimeout(r,2000)); }
     }
@@ -146,7 +138,7 @@ async function downloadMemoPdf(data) {
     const html = stage.firstElementChild?.outerHTML || stage.innerHTML;
     const resp = await fetchWithRetry('https://memo-pdf-server.onrender.com/generate-pdf', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ html, filename, logoBase64 })
+      body: JSON.stringify({ html, filename })
     });
     if(!resp.ok) throw new Error('Server '+resp.status);
     const blob = await resp.blob();
@@ -168,12 +160,11 @@ function openMemoPdf(memoNo) {
 // ── Init ──
 function initApp() {
   ['f-date','f-signdate','f-apprdate','sl-ratedate'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value = TODAY;
+    const el = document.getElementById(id); if(el) el.value = todayISO;
   });
   setNextMemoNo();
   renderPendingMemos();
   renderHistoryMemos();
   rebuildAcct();
-  // Keep Render PDF server warm
   setInterval(() => fetch('https://memo-pdf-server.onrender.com/ping').catch(()=>{}), 4*60*1000);
 }
