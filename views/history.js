@@ -1,6 +1,6 @@
-// ─────────────────────────────────────────────
-//  views/history.js  —  history table, filter, CSV export
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────
+// views/history.js — history table, filter, CSV
+// ─────────────────────────────────────────
 
 function statusLabel(status) { return status==='completed'?'Completed':status==='rejected'?'Rejected':status; }
 function statusBadgeClass(status) { return status==='completed'?'badge-green':status==='rejected'?'badge-red':'badge-gray'; }
@@ -30,7 +30,7 @@ function filteredHistoryMemos() {
       (project==='all' || m.project===project) &&
       inHistoryRange(m, range)
     )
-    .sort((a,b) => new Date(b.updatedAt||b.createdAt||0) - new Date(a.updatedAt||a.createdAt||0));
+    .sort((a,b) => new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0));
 }
 function renderHistoryMemos() {
   const body = document.getElementById('history-body');
@@ -48,23 +48,19 @@ function renderHistoryMemos() {
       <td class="mono">${esc(money(memo.total||0))}</td>
       <td>${esc(shortDate(memo.updatedAt||memo.createdAt))}</td>
       <td><span class="badge ${statusBadgeClass(memo.status)}">${esc(statusLabel(memo.status))}</span></td>
-      <td style="text-align:center"><button class="btn-sm" onclick="openMemoPdf(${JSON.stringify(memo.memoNo)})" style="padding:3px 8px;margin:0 auto">&#128196;</button></td>
+      <td style="text-align:center"><button class="btn-sm" data-action="pdf" data-memo="${esc(memo.memoNo)}" style="padding:3px 8px;margin:0 auto">&#128196;</button></td>
     </tr>`).join('');
+  const tbl = body.closest('table');
+  if(tbl) tbl.onclick = e => { const b=e.target.closest('[data-action="pdf"]'); if(b) openMemoPdf(b.dataset.memo); };
 }
 function exportHistoryCsv() {
   const memos = filteredHistoryMemos();
   if(!memos.length) { alert('ไม่มีข้อมูลสำหรับ Export'); return; }
   const headers = ['Memo No','Type','Project','Amount','Status','Created At','Updated At','Subject','Reason','Rejection Reason'];
-  const rows = memos.map(m => [
-    m.memoNo||'', String(m.type||'').toUpperCase(), m.project||'',
-    Number(m.total)||0, statusLabel(m.status),
-    m.createdAt||'', m.updatedAt||'', m.subject||'', m.reason||'', m.rejectionReason||''
-  ]);
+  const rows = memos.map(m => [m.memoNo||'', String(m.type||'').toUpperCase(), m.project||'', Number(m.total)||0, statusLabel(m.status), m.createdAt||'', m.updatedAt||'', m.subject||'', m.reason||'', m.rejectionReason||'']);
   const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\ufeff'+csv], { type:'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url; a.download=`memo-history-${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
+  const a = document.createElement('a'); a.href=url; a.download=`memo-history-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }

@@ -1,10 +1,10 @@
-// ─────────────────────────────────────────────
-//  views/pending.js  —  pending list, approve, reject
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────
+// views/pending.js — pending list, approve, reject
+// ─────────────────────────────────────────
 
 function pendingMemos() {
   return loadMemos()
-    .filter(m => m.status === 'pending')
+    .filter(m => !m.status || m.status === 'pending')
     .sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
 }
 function pendingAge(iso) {
@@ -21,7 +21,6 @@ function renderPendingMemos() {
   if(el('pending-count')) el('pending-count').textContent = memos.length;
   if(el('pending-total')) el('pending-total').textContent = money(total);
   if(el('pending-latest')) el('pending-latest').textContent = memos[0]?.memoNo || '-';
-  // update sidebar badge
   const badge = document.querySelector('#memo-sub .sb-badge');
   if(badge) badge.textContent = memos.length;
   if(!memos.length) {
@@ -32,7 +31,7 @@ function renderPendingMemos() {
     <div class="pend-card">
       <div class="pend-top">
         <div>
-          <div class="pend-title">${esc(memo.memoNo)} — ${esc(memo.typeLabel)}</div>
+          <div class="pend-title">${esc(memo.memoNo)} — ${esc(memo.typeLabel||'-')}</div>
           <div class="pend-meta">
             <span class="badge ${badgeClass(memo.type)}">${esc(String(memo.type||'').toUpperCase())}</span>
             ${esc(memo.project||'-')} &nbsp;&middot;&nbsp; ${esc(memo.reviewerName||'-')} &nbsp;&middot;&nbsp; ${esc(shortDate(memo.createdAt))}
@@ -43,20 +42,28 @@ function renderPendingMemos() {
       </div>
       <div class="pend-detail">${esc(memo.subject||'-')} &nbsp;&middot;&nbsp; เหตุผล: ${esc(memo.reason||'-')}</div>
       <div class="pend-actions">
-        <button class="btn-approve" onclick="approveMemo(${JSON.stringify(memo.memoNo)})">
+        <button class="btn-approve" data-action="approve" data-memo="${esc(memo.memoNo)}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           Approve
         </button>
-        <button class="btn-reject" onclick="rejectMemo(${JSON.stringify(memo.memoNo)})">
+        <button class="btn-reject" data-action="reject" data-memo="${esc(memo.memoNo)}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           Reject
         </button>
-        <button class="btn-sm" onclick="openMemoPdf(${JSON.stringify(memo.memoNo)})">
+        <button class="btn-sm" data-action="pdf" data-memo="${esc(memo.memoNo)}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           ดู PDF
         </button>
       </div>
     </div>`).join('');
+  list.onclick = function(e) {
+    const btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    const memoNo = btn.dataset.memo;
+    if(btn.dataset.action==='approve') approveMemo(memoNo);
+    else if(btn.dataset.action==='reject') rejectMemo(memoNo);
+    else if(btn.dataset.action==='pdf') openMemoPdf(memoNo);
+  };
 }
 function approveMemo(memoNo) {
   if(!confirm(`Approve ${memoNo}?`)) return;
@@ -65,7 +72,7 @@ function approveMemo(memoNo) {
 }
 function rejectMemo(memoNo) {
   const reason = prompt(`ระบุเหตุผล Reject สำหรับ ${memoNo}`);
-  if(reason === null) return;
+  if(reason===null) return;
   const memo = updateMemoStatus(memoNo, 'rejected', { rejectionReason: reason.trim()||'-' });
   if(memo) alert(`${memoNo} Rejected แล้ว`);
 }
