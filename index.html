@@ -5,9 +5,603 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PMO Dashboard — Orbit Digital</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+:root {
+  --blue:        #185FA5;
+  --blue-50:     #E6F1FB;
+  --blue-100:    #B5D4F4;
+  --blue-600:    #185FA5;
+  --blue-800:    #0C447C;
+  --blue-900:    #042C53;
+  --green:       #3B6D11;
+  --green-50:    #EAF3DE;
+  --green-200:   #97C459;
+  --amber:       #854F0B;
+  --amber-50:    #FAEEDA;
+  --amber-200:   #EF9F27;
+  --red:         #A32D2D;
+  --red-50:      #FCEBEB;
+  --red-200:     #F09595;
+  --gray:        #5F5E5A;
+  --gray-50:     #F1EFE8;
+  --gray-200:    #B4B2A9;
+  --purple:      #3C3489;
+  --purple-50:   #EEEDFE;
+  --bg:          #F4F3EF;
+  --surface:     #FFFFFF;
+  --border:      rgba(0,0,0,0.07);
+  --border-md:   rgba(0,0,0,0.12);
+  --text:        #1C1C1A;
+  --text-2:      #5F5E5A;
+  --text-3:      #A09E98;
+  --r:           10px;
+  --r-sm:        6px;
+  --sidebar-w:   196px;
+}
 
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── LAYOUT ── */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sb-logo {
+  padding: 16px 14px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.sb-dot {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sb-dot svg { width: 14px; height: 14px; fill: #fff; }
+.sb-brand { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.sb-brand-sub { font-size: 10px; color: var(--text-3); font-weight: 400; }
+
+.sb-nav { padding: 10px 8px; flex: 1; }
+.sb-section {
+  font-size: 9px; font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  padding: 0 8px;
+  margin: 12px 0 4px;
+}
+.sb-section:first-child { margin-top: 0; }
+
+.sb-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 1px;
+  transition: background .12s, color .12s;
+  user-select: none;
+}
+.sb-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: .7; }
+.sb-item:hover { background: var(--bg); color: var(--text); }
+.sb-item:hover svg { opacity: 1; }
+.sb-item.active { background: var(--blue-50); color: var(--blue-800); }
+.sb-item.active svg { opacity: 1; fill: var(--blue-800); stroke: var(--blue-800); }
+.sb-item .sb-badge {
+  margin-left: auto;
+  font-size: 9px; font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--amber-50);
+  color: var(--amber);
+}
+
+.sb-sub { margin-left: 4px; }
+.sb-sub-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 8px 5px 20px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: 11px;
+  margin-bottom: 1px;
+  border-left: 2px solid transparent;
+  transition: all .12s;
+  user-select: none;
+}
+.sb-sub-item svg { width: 13px; height: 13px; flex-shrink: 0; }
+.sb-sub-item:hover { background: var(--bg); color: var(--text-2); }
+.sb-sub-item.active {
+  color: var(--blue);
+  font-weight: 600;
+  border-left-color: var(--blue);
+  background: var(--blue-50);
+}
+.sb-sub-item .sb-badge {
+  margin-left: auto;
+  font-size: 9px; font-weight: 700;
+  padding: 1px 6px; border-radius: 10px;
+  background: var(--amber-50); color: var(--amber);
+}
+
+.sb-footer {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+}
+.sb-user {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background .12s;
+}
+.sb-user:hover { background: var(--bg); }
+.sb-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--blue-50); color: var(--blue-800);
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sb-uname { font-size: 12px; font-weight: 600; color: var(--text); }
+.sb-urole { font-size: 10px; color: var(--text-3); }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+.topbar {
+  height: 48px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.topbar-crumb { font-size: 12px; color: var(--text-3); }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.topbar-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-md);
+  background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2);
+  transition: background .12s;
+}
+.topbar-btn:hover { background: var(--bg); }
+.topbar-btn svg { width: 16px; height: 16px; }
+
+/* ── CONTENT ── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.card-head {
+  display: flex; align-items: center; gap: 9px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.card-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--blue-50); color: var(--blue-800);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.card-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.card-subtitle { font-size: 11px; color: var(--text-3); margin-left: 4px; }
+
+/* ── TYPE SELECTOR ── */
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.type-btn {
+  padding: 12px 8px;
+  border: 1.5px solid var(--border-md);
+  border-radius: var(--r);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+}
+.type-btn:hover {
+  border-color: var(--blue-100);
+  background: var(--blue-50);
+}
+.type-btn.selected {
+  border-color: var(--blue);
+  background: var(--blue-50);
+  box-shadow: 0 0 0 3px rgba(24,95,165,.1);
+}
+.type-code {
+  display: block;
+  font-size: 15px; font-weight: 700;
+  color: var(--blue-800);
+  margin-bottom: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.type-name {
+  display: block;
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.3;
+}
+.type-btn.selected .type-name { color: var(--blue-600); }
+
+/* ── FORM ── */
+.form-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.fg { display: flex; flex-direction: column; gap: 4px; }
+.fg label { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: .1px; }
+.fg input, .fg select, .fg textarea {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(24,95,165,.08);
+}
+.fg input[readonly] {
+  background: var(--bg);
+  color: var(--text-3);
+  border-color: var(--border);
+  cursor: default;
+}
+.fg input[readonly]:focus { box-shadow: none; border-color: var(--border); }
+.fg textarea { resize: vertical; min-height: 64px; }
+.form-note { font-size: 11px; color: var(--text-3); margin-top: 6px; }
+
+/* ── ITEMS TABLE ── */
+.items-hdr {
+  display: grid; gap: 7px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.items-hdr span { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .3px; }
+.item-row { display: grid; gap: 7px; align-items: center; margin-bottom: 6px; }
+.ri {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 13px;
+  padding: 6px 9px;
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+  transition: border-color .15s;
+  outline: none;
+}
+.ri:focus { border-color: var(--blue); }
+.rm-btn {
+  width: 30px; height: 30px;
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--red);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+  flex-shrink: 0;
+}
+.rm-btn:hover { background: var(--red-50); }
+.rm-btn svg { width: 13px; height: 13px; }
+
+.add-btn {
+  width: 100%; margin-top: 6px;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; font-weight: 500;
+  color: var(--blue);
+  background: var(--blue-50);
+  border: 1px dashed var(--blue-100);
+  border-radius: var(--r-sm);
+  padding: 7px;
+  cursor: pointer;
+  transition: background .12s;
+  text-align: center;
+}
+.add-btn:hover { background: var(--blue-100); }
+
+.total-box {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  margin-top: 10px;
+}
+.total-label { font-size: 12px; font-weight: 600; color: var(--blue-800); }
+.total-val { font-size: 18px; font-weight: 600; color: var(--blue-900); font-family: 'IBM Plex Mono', monospace; }
+
+/* ── ROW NAME ── */
+.row-name { display: grid; grid-template-columns: 20px 1fr 30px; gap: 6px; align-items: center; margin-bottom: 5px; }
+.name-num { font-size: 11px; color: var(--text-3); text-align: center; }
+
+/* ── FIELD SECTIONS ── */
+.fs { display: none; }
+.fs.active { display: block; }
+
+/* ── ACTIONS ── */
+.action-row { display: flex; gap: 8px; justify-content: flex-end; padding-top: 6px; }
+.btn-primary {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 13px; font-weight: 600;
+  padding: 9px 20px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s;
+}
+.btn-primary:hover { background: var(--blue-800); }
+.btn-ghost {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 13px; font-weight: 500;
+  padding: 9px 16px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-ghost:hover { background: var(--bg); }
+
+/* ── HINT ── */
+.form-hint {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-3);
+}
+.form-hint svg { width: 36px; height: 36px; margin-bottom: 10px; opacity: .4; }
+.form-hint p { font-size: 13px; }
+
+/* ── BADGES ── */
+.badge {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  display: inline-block; white-space: nowrap;
+}
+.badge-blue   { background: var(--blue-50);   color: var(--blue-800); }
+.badge-green  { background: var(--green-50);  color: var(--green); }
+.badge-amber  { background: var(--amber-50);  color: var(--amber); }
+.badge-red    { background: var(--red-50);    color: var(--red); }
+.badge-gray   { background: var(--gray-50);   color: var(--gray); }
+.badge-purple { background: var(--purple-50); color: var(--purple); }
+.mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+
+/* ── METRICS ── */
+.metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+}
+.metric-label { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
+.metric-val { font-size: 24px; font-weight: 600; }
+.metric-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+/* ── PENDING CARDS ── */
+.sec-label {
+  font-size: 10px; font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .5px;
+  margin-bottom: 8px; margin-top: 16px;
+}
+.sec-label:first-child { margin-top: 0; }
+.pend-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.pend-card:hover { border-color: var(--blue-100); }
+.pend-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.pend-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.pend-meta { font-size: 11px; color: var(--text-3); margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pend-amount { font-size: 14px; font-weight: 700; color: var(--blue-800); font-family: 'IBM Plex Mono', monospace; }
+.pend-detail {
+  font-size: 12px; color: var(--text-2);
+  background: var(--bg);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+.pend-actions { display: flex; gap: 6px; }
+.btn-approve {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; font-weight: 600;
+  padding: 6px 14px;
+  background: var(--green-50); color: var(--green);
+  border: 1px solid var(--green-200);
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .12s;
+}
+.btn-approve:hover { background: #C0DD97; }
+.btn-reject {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; font-weight: 500;
+  padding: 6px 14px;
+  background: var(--red-50); color: var(--red);
+  border: 1px solid var(--red-200);
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .12s;
+}
+.btn-reject:hover { background: #F7C1C1; }
+.btn-sm {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px;
+  padding: 6px 12px;
+  background: transparent; color: var(--text-3);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .12s;
+}
+.btn-sm:hover { background: var(--bg); color: var(--text-2); }
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ── FILTER ROW ── */
+.filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+.filter-row select {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; padding: 6px 10px;
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text);
+  cursor: pointer; outline: none;
+}
+.btn-export {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; font-weight: 500;
+  padding: 6px 12px;
+  background: var(--surface); color: var(--text-2);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-left: auto; transition: background .12s;
+}
+.btn-export:hover { background: var(--bg); }
+
+/* ── HISTORY TABLE ── */
+.hist-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.hist-table th {
+  text-align: left; padding: 8px 12px;
+  font-size: 10px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .4px;
+  border-bottom: 1px solid var(--border);
+}
+.hist-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.hist-table tr:last-child td { border-bottom: none; }
+.hist-table tbody tr { transition: background .1s; cursor: default; }
+.hist-table tbody tr:hover td { background: var(--bg); }
+
+/* ── PLACEHOLDER ── */
+.placeholder {
+  text-align: center; padding: 60px 20px; color: var(--text-3);
+}
+.placeholder svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: .3; }
+.placeholder h3 { font-size: 15px; font-weight: 600; color: var(--text-2); margin-bottom: 4px; }
+.placeholder p { font-size: 13px; }
+
+
+/* ── PDF TEMPLATE ── */
+.pdf-stage {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 794px;
+  background: #fff;
+  color: #111;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+}
+.pdf-page {
+  width: 794px;
+  min-height: 1123px;
+  padding: 54px 64px;
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.72;
+}
+.pdf-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #185FA5; padding-bottom: 14px; margin-bottom: 18px; }
+.pdf-brand { font-size: 18px; font-weight: 700; color: #185FA5; }
+.pdf-subbrand { font-size: 11px; color: #5F5E5A; }
+.pdf-memo-no { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5F5E5A; text-align: right; }
+.pdf-title { text-align: center; font-size: 18px; font-weight: 700; margin: 18px 0; }
+.pdf-meta { display: grid; grid-template-columns: 86px 1fr; gap: 5px 12px; margin-bottom: 18px; }
+.pdf-label { font-weight: 700; color: #444; }
+.pdf-section { margin-top: 14px; }
+.pdf-section-title { font-weight: 700; color: #185FA5; margin-bottom: 6px; }
+.pdf-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+.pdf-table th, .pdf-table td { border: 1px solid #d9d9d9; padding: 6px 8px; vertical-align: top; }
+.pdf-table th { background: #E6F1FB; color: #0C447C; font-weight: 700; text-align: left; }
+.pdf-table .num { text-align: right; font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+.pdf-total { display: flex; justify-content: flex-end; gap: 14px; margin-top: 10px; font-weight: 700; color: #042C53; }
+.pdf-signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 54px; }
+.pdf-sign-box { text-align: center; min-height: 110px; }
+.pdf-sign-line { border-top: 1px solid #222; margin: 54px 18px 8px; }
+.pdf-muted { color: #666; }
+.pdf-alert { margin-top: 10px; padding: 8px 10px; border: 1px solid #B5D4F4; background: #E6F1FB; border-radius: 6px; color: #0C447C; font-size: 12px; }
+@media print {
+  body.printing-pdf .layout { display: none; }
+  body.printing-pdf .pdf-stage { position: static; width: auto; }
+  body.printing-pdf .pdf-page { width: auto; min-height: auto; padding: 32px; }
+}
+
+/* ── SVG ICONS ── */
+svg.icon { display: inline-block; vertical-align: middle; }
+</style>
+</head>
 <body>
 
 <div class="layout">
@@ -131,15 +725,20 @@
               <span class="card-title">ข้อมูลทั่วไป</span>
             </div>
             <div class="form-grid" style="margin-bottom:10px">
-              <div class="fg"><label>เลข Memo</label><input type="text" id="f-memo-no" value="" readonly></div>
-              <div class="fg"><label>ลงวันที่</label><input type="text" id="f-date" readonly></div>
+              <div class="fg"><label>เลข Memo</label><input type="text" id="f-memo-no" placeholder="เช่น ORB-2605-001"></div>
+              <div class="fg"><label>ลงวันที่ *</label><input type="date" id="f-date"></div>
               <div class="fg">
                 <label>โครงการ *</label>
-                <select id="f-project">
+                <select id="f-project" onchange="toggleOtherProject()">
                   <option value="">— เลือกโครงการ —</option>
                   <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
                   <option>Release 2.1</option><option>Release 3</option>
+                  <option value="other">อื่นๆ (กรอกเอง)</option>
                 </select>
+              </div>
+              <div class="fg" id="project-other-wrap" style="display:none">
+                <label>ชื่อโครงการ *</label>
+                <input type="text" id="f-project-other" placeholder="กรอกชื่อโครงการ">
               </div>
               <div class="fg"><label>เรียน *</label><input type="text" id="f-to" placeholder="ประธานเจ้าหน้าที่บริหาร"></div>
             </div>
@@ -181,7 +780,7 @@
               </div>
               <button class="add-btn" onclick="addSLRow()">+ เพิ่ม Software</button>
               <div class="form-grid" style="margin-top:12px">
-                <div class="fg"><label>วันที่แปลงเรท USD→THB</label><input type="text" id="sl-ratedate" readonly></div>
+                <div class="fg"><label>วันที่แปลงเรท USD→THB</label><input type="date" id="sl-ratedate"></div>
                 <div class="fg"><label>จำนวนเงินเป็นตัวอักษร</label><input type="text" placeholder="เช่น สองแสนห้าหมื่นบาทถ้วน"></div>
               </div>
               <div class="total-box"><span class="total-label">Total Amount</span><span class="total-val" id="sl-total">฿0</span></div>
@@ -291,13 +890,13 @@
             <div class="form-grid-3" style="margin-bottom:14px">
               <div class="fg"><label>ชื่อ Reviewer *</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
               <div class="fg"><label>ตำแหน่ง *</label><input type="text" value="ผู้จัดการโครงการ"></div>
-              <div class="fg"><label>วันที่ลงนาม</label><input type="text" id="f-signdate" readonly></div>
+              <div class="fg"><label>วันที่ลงนาม</label><input type="date" id="f-signdate"></div>
             </div>
             <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Approver</div>
             <div class="form-grid-3">
               <div class="fg"><label>ชื่อ Approver *</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
               <div class="fg"><label>ตำแหน่ง *</label><input type="text" id="f-appr-title" value="ประธานเจ้าหน้าที่บริหาร"></div>
-              <div class="fg"><label>วันที่ลงนาม</label><input type="text" id="f-apprdate" readonly></div>
+              <div class="fg"><label>วันที่ลงนาม</label><input type="date" id="f-apprdate"></div>
             </div>
           </div>
 
@@ -388,17 +987,589 @@
 
 <div id="pdf-stage" class="pdf-stage" aria-hidden="true"></div>
 
-<div id="pdf-stage" class="pdf-stage" aria-hidden="true"></div>
+<script>
+// ── Date helpers ──
+const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function thaiDate(d) { return `${d.getDate()} ${MONTHS_TH[d.getMonth()]} ${d.getFullYear()+543}`; }
+const TODAY = thaiDate(new Date());
+// Set date inputs to today (ISO format for <input type="date">)
+const todayISO = new Date().toISOString().slice(0,10);
+['f-date','f-signdate','f-apprdate','sl-ratedate'].forEach(id => {
+  const el = document.getElementById(id); if(el) el.value = todayISO;
+});
 
-<!-- Core: shared utils, storage, navigation, PDF -->
-<script src="app.js"></script>
-<!-- Views -->
-<script src="views/create.js"></script>
-<script src="views/pending.js"></script>
-<script src="views/history.js"></script>
-<script src="views/budget.js"></script>
-<script src="views/license.js"></script>
-<!-- Boot -->
-<script>initApp();</script>
+// ── Type config ──
+let selectedType = null;
+const TYPE_LABELS = { sl:'Software License', hw:'Hardware', int:'Team Activity', ent:'Client Expense', dep:'Deployment' };
+const TYPE_CFG = {
+  sl:  { title:'รายการ Software *', to:'ประธานเจ้าหน้าที่บริหาร', apprTitle:'ประธานเจ้าหน้าที่บริหาร', reasons:['เป็นโปรแกรมที่ได้รับการอนุมัติและใช้งานอยู่เดิม เพื่อให้การดำเนินโครงการเป็นไปอย่างต่อเนื่องและมีประสิทธิภาพ','เป็นโปรแกรมใหม่ที่จำเป็นต้องใช้เพื่อพัฒนาโครงการ','เพื่ออัปเกรดการใช้งานโปรแกรมให้รองรับการทำงานของทีมที่เพิ่มขึ้น'] },
+  hw:  { title:'รายการ Hardware *', to:'ประธานเจ้าหน้าที่บริหาร', apprTitle:'ประธานเจ้าหน้าที่บริหาร', reasons:['เพื่อใช้ในการพัฒนาและทดสอบระบบของโครงการ','เพื่อทดแทนอุปกรณ์เดิมที่เสื่อมสภาพและไม่สามารถใช้งานได้','เพื่อรองรับการขยายทีมและเพิ่มประสิทธิภาพการทำงาน'] },
+  int: { title:'รายชื่อผู้เข้าร่วม *', to:'Project director โครงการ', apprTitle:'ผู้อำนวยการโครงการ', reasons:['เพื่อเสริมสร้างกำลังใจในการปฏิบัติงาน และส่งเสริมการทำงานเป็นทีม','เพื่อเสริมสร้างความสัมพันธ์ในทีมและพัฒนาการทำงานร่วมกัน'] },
+  ent: { title:'รายละเอียดงานเลี้ยงรับรอง', to:'ประธานเจ้าหน้าที่บริหาร', apprTitle:'ประธานเจ้าหน้าที่บริหาร', reasons:['เพื่อขอบคุณลูกค้าในโครงการ','เพื่อเสริมสร้างความสัมพันธ์กับลูกค้า'] },
+  dep: { title:'รายละเอียด Deployment', to:'ผู้อำนวยการโครงการ', apprTitle:'ผู้อำนวยการโครงการ', reasons:['เพื่อความละเอียดในการเบิกแยก Online / Onsite','เพื่อสนับสนุนการ Deployment ให้เป็นไปอย่างราบรื่นและมีประสิทธิภาพ'] }
+};
+
+function selectType(type, btn) {
+  selectedType = type;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.querySelectorAll('.fs').forEach(s => s.classList.remove('active'));
+  document.getElementById('fs-'+type).classList.add('active');
+  const cfg = TYPE_CFG[type];
+  document.getElementById('detail-title').textContent = cfg.title;
+  document.getElementById('f-to').value = cfg.to;
+  document.getElementById('f-appr-title').value = cfg.apprTitle;
+  const rs = document.getElementById('f-reason');
+  rs.innerHTML = '<option value="">— เลือกเหตุผล —</option>';
+  cfg.reasons.forEach(r => { const o = document.createElement('option'); o.value = r; o.textContent = r; rs.appendChild(o); });
+  rs.innerHTML += '<option value="other">อื่นๆ (กรอกเอง)</option>';
+  document.getElementById('form-hint').style.display = 'none';
+  document.getElementById('form-body').style.display = 'block';
+  document.getElementById('acct-card').style.display = type === 'sl' ? 'block' : 'none';
+  document.getElementById('rev-num').textContent = type === 'sl' ? '5' : '4';
+}
+
+function toggleOtherProject() {
+  const sel = document.getElementById('f-project');
+  const wrap = document.getElementById('project-other-wrap');
+  wrap.style.display = sel.value === 'other' ? 'block' : 'none';
+  if(sel.value === 'other') document.getElementById('f-project-other').focus();
+}
+function toggleOther() {
+  const sel = document.getElementById('f-reason');
+  document.getElementById('other-wrap').style.display = sel.value === 'other' ? 'block' : 'none';
+}
+
+// ── Navigation ──
+function swView(id, el, title) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.sb-sub-item').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.getElementById('page-title').textContent = title;
+  if(el) el.classList.add('active');
+  if(['create','pending','history'].includes(id)) document.getElementById('nav-memo').classList.add('active');
+}
+function toggleMemoSub(el) {
+  el.classList.add('active');
+  swView('create', document.querySelector('#memo-sub .sb-sub-item'), 'Create Memo');
+}
+
+// ── Calcs ──
+function calcSL() {
+  let t = 0;
+  document.querySelectorAll('#sl-rows .item-row').forEach(r => {
+    const p = parseFloat(r.querySelector('.sl-price')?.value)||0;
+    const m = parseInt(r.querySelector('.sl-mo')?.value)||0;
+    const q = parseInt(r.querySelector('.sl-qty')?.value)||0;
+    t += p*m*q;
+  });
+  document.getElementById('sl-total').textContent = '฿'+t.toLocaleString('th-TH');
+}
+function calcHW() {
+  let t = 0;
+  document.querySelectorAll('#hw-rows .item-row').forEach(r => {
+    const p = parseFloat(r.querySelector('.hw-price')?.value)||0;
+    const q = parseInt(r.querySelector('.hw-qty')?.value)||0;
+    t += p*q;
+  });
+  document.getElementById('hw-total').textContent = '฿'+t.toLocaleString('th-TH');
+}
+function calcINT() {
+  const pp = parseFloat(document.getElementById('int-pp')?.value)||0;
+  const n = document.querySelectorAll('.int-name').length;
+  document.getElementById('int-total').textContent = '฿'+(pp*n).toLocaleString('th-TH');
+}
+
+// ── Row helpers ──
+function rmRow(btn, containerId) {
+  const c = document.getElementById(containerId);
+  if(c.querySelectorAll('.item-row').length > 1) btn.closest('.item-row').remove();
+}
+function addSLRow() {
+  const d = document.createElement('div'); d.className='item-row'; d.style.gridTemplateColumns='3fr 1.2fr 0.8fr 0.8fr 30px';
+  d.innerHTML = `<input class="ri" type="text" placeholder="ชื่อ Software"><input class="ri sl-price" type="number" placeholder="ราคา" oninput="calcSL()"><input class="ri sl-mo" type="number" value="12" oninput="calcSL()"><input class="ri sl-qty" type="number" placeholder="จำนวน" oninput="calcSL()"><button class="rm-btn" onclick="rmRow(this,'sl-rows');calcSL()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
+  document.getElementById('sl-rows').appendChild(d);
+}
+function addHWRow() {
+  const d = document.createElement('div'); d.className='item-row'; d.style.gridTemplateColumns='3fr 1.4fr 1fr 30px';
+  d.innerHTML = `<input class="ri" type="text" placeholder="ชื่ออุปกรณ์"><input class="ri hw-price" type="number" placeholder="ราคา" oninput="calcHW()"><input class="ri hw-qty" type="number" placeholder="จำนวน" oninput="calcHW()"><button class="rm-btn" onclick="rmRow(this,'hw-rows');calcHW()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
+  document.getElementById('hw-rows').appendChild(d);
+}
+function addName(cid, cls, doCalc) {
+  const c = document.getElementById(cid);
+  const n = c.querySelectorAll('.row-name').length+1;
+  const d = document.createElement('div'); d.className='row-name';
+  const calcStr = doCalc ? ';calcINT()' : '';
+  d.innerHTML = `<span class="name-num">${n}.</span><input class="ri ${cls}" type="text" placeholder="ชื่อ-นามสกุล ตำแหน่ง" oninput="${doCalc?'calcINT()':''}"><button class="rm-btn" onclick="rmName(this,'${cid}')${calcStr}" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
+  c.appendChild(d);
+}
+function rmName(btn, cid) {
+  const c = document.getElementById(cid);
+  if(c.querySelectorAll('.row-name').length > 1) btn.closest('.row-name').remove();
+  c.querySelectorAll('.name-num').forEach((el,i) => el.textContent=(i+1)+'.');
+}
+
+
+// ── PDF generation ──
+function esc(v) {
+  return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
+function val(sel, root=document) { return root.querySelector(sel)?.value?.trim() || ''; }
+function money(n) { return '฿' + (Number(n)||0).toLocaleString('th-TH', { maximumFractionDigits: 2 }); }
+function dateInput(v) {
+  if(!v) return '-';
+  const d = new Date(v + 'T00:00:00');
+  return Number.isNaN(d.getTime()) ? v : thaiDate(d);
+}
+function selectedReason() {
+  const reason = val('#f-reason');
+  return reason === 'other' ? val('#f-reason-other') : reason;
+}
+function memoSubject(data) {
+  if(data.subject) return data.subject;
+  const project = data.project ? `โครงการ ${data.project}` : 'โครงการ';
+  const map = {
+    sl: `ขออนุมัติจัดซื้อ Software License สำหรับ${project}`,
+    hw: `ขออนุมัติจัดซื้อ Hardware สำหรับ${project}`,
+    int: `ขออนุมัติค่าใช้จ่าย Team Activity สำหรับ${project}`,
+    ent: `ขออนุมัติค่าใช้จ่ายรับรองลูกค้าสำหรับ${project}`,
+    dep: `ขออนุมัติค่าใช้จ่าย Deployment สำหรับ${project}`
+  };
+  return map[data.type] || 'ขออนุมัติ Memo';
+}
+function collectMemoData() {
+  const reviewerCard = document.querySelector('#rev-num')?.closest('.card');
+  const reviewerInputs = Array.from(reviewerCard?.querySelectorAll('input') || []).map(i => i.value.trim());
+  const data = {
+    type: selectedType,
+    typeLabel: TYPE_LABELS[selectedType] || '-',
+    memoNo: val('#f-memo-no'),
+    date: dateInput(val('#f-date')),
+    project: (val('#f-project') === 'other' ? val('#f-project-other') : val('#f-project')),
+    to: val('#f-to'),
+    subject: val('#f-subject'),
+    reason: selectedReason(),
+    reviewerName: reviewerInputs[0] || '-',
+    reviewerTitle: reviewerInputs[1] || '-',
+    reviewerDate: dateInput(reviewerInputs[2]) || TODAY,
+    approverName: reviewerInputs[3] || '-',
+    approverTitle: reviewerInputs[4] || '-',
+    approverDate: dateInput(reviewerInputs[5]) || TODAY,
+    sections: [],
+    total: 0,
+    amountWords: ''
+  };
+  data.subject = memoSubject(data);
+
+  if(data.type === 'sl') {
+    const rows = Array.from(document.querySelectorAll('#sl-rows .item-row')).map((row, i) => {
+      const inputs = row.querySelectorAll('input');
+      const price = Number(inputs[1]?.value) || 0;
+      const months = Number(inputs[2]?.value) || 0;
+      const qty = Number(inputs[3]?.value) || 0;
+      const subtotal = price * months * qty;
+      return { no:i+1, name:inputs[0]?.value.trim() || '-', price, months, qty, subtotal };
+    });
+    data.total = rows.reduce((sum, r) => sum + r.subtotal, 0);
+    data.amountWords = val('#fs-sl .form-grid .fg:nth-child(2) input');
+    data.sections.push({ title:'รายการ Software', html: table(['#','ชื่อ Software','฿/เดือน','เดือน','จำนวน','รวม'], rows.map(r => [r.no, r.name, money(r.price), r.months, r.qty, money(r.subtotal)]), [2,5]) });
+    const acctCols = getAcctCols();
+    const acctRows = Array.from(document.querySelectorAll('#acct-body tr')).map(tr => [val('.acct-email', tr), ...Array.from(tr.querySelectorAll('.acct-val')).map(s => s.value)]).filter(r => r.some(Boolean));
+    if(acctCols.length && acctRows.length) data.sections.push({ title:'ตาราง Account', html: table(['Email', ...acctCols], acctRows, []) });
+  }
+  if(data.type === 'hw') {
+    const rows = Array.from(document.querySelectorAll('#hw-rows .item-row')).map((row, i) => {
+      const inputs = row.querySelectorAll('input');
+      const price = Number(inputs[1]?.value) || 0;
+      const qty = Number(inputs[2]?.value) || 0;
+      const subtotal = price * qty;
+      return { no:i+1, name:inputs[0]?.value.trim() || '-', price, qty, subtotal };
+    });
+    data.total = rows.reduce((sum, r) => sum + r.subtotal, 0);
+    data.amountWords = val('#fs-hw .form-grid .fg:nth-child(1) input');
+    const owner = val('#fs-hw .form-grid .fg:nth-child(2) input');
+    data.sections.push({ title:'รายการ Hardware', html: table(['#','ชื่ออุปกรณ์','ราคา/ชิ้น','จำนวน','รวม'], rows.map(r => [r.no, r.name, money(r.price), r.qty, money(r.subtotal)]), [2,4]) });
+    if(owner) data.sections.push({ title:'ผู้รับผิดชอบดูแลอุปกรณ์', html:`<p>${esc(owner)}</p>` });
+  }
+  if(data.type === 'int') {
+    const fs = document.querySelector('#fs-int');
+    const inputs = fs.querySelectorAll('input');
+    const perPerson = Number(inputs[2]?.value) || 0;
+    const names = Array.from(fs.querySelectorAll('.int-name')).map((i, idx) => [idx+1, i.value.trim() || '-']);
+    data.total = perPerson * names.length;
+    data.amountWords = inputs[3]?.value.trim() || '';
+    data.sections.push({ title:'รายละเอียดกิจกรรม', html:`<p>ไตรมาส / ครั้งที่: ${esc(inputs[0]?.value || '-')}<br>วันที่จัดกิจกรรม: ${esc(dateInput(inputs[1]?.value))}<br>วงเงินต่อคน: ${esc(money(perPerson))}</p>` });
+    data.sections.push({ title:'รายชื่อผู้เข้าร่วม', html: table(['#','ชื่อ-นามสกุล / ตำแหน่ง'], names, []) });
+  }
+  if(data.type === 'ent') {
+    const inputs = document.querySelectorAll('#fs-ent input');
+    const total = Number(inputs[5]?.value) || 0;
+    data.total = total;
+    data.amountWords = inputs[6]?.value.trim() || '';
+    data.sections.push({ title:'รายละเอียดงานเลี้ยงรับรอง', html:`<p>ลูกค้า / บริษัท: ${esc(inputs[0]?.value || '-')}<br>วันที่: ${esc(dateInput(inputs[1]?.value))} เวลา ${esc(inputs[2]?.value || '-')}<br>สถานที่: ${esc(inputs[3]?.value || '-')}<br>จำนวนผู้เข้าร่วม: ${esc(inputs[4]?.value || '-')} คน</p>` });
+  }
+  if(data.type === 'dep') {
+    const fs = document.querySelector('#fs-dep');
+    const inputs = fs.querySelectorAll('input');
+    data.amountWords = inputs[4]?.value.trim() || '';
+    const names = Array.from(fs.querySelectorAll('.dep-name')).map((i, idx) => [idx+1, i.value.trim() || '-']);
+    data.sections.push({ title:'รายละเอียด Deployment', html:`<p>ช่วงวันที่ Deploy: ${esc(dateInput(inputs[0]?.value))} - ${esc(dateInput(inputs[1]?.value))}<br>สถานที่: ${esc(inputs[2]?.value || '-')}<br>รูปแบบ: ${esc(fs.querySelector('select')?.value || '-')}<br>วงเงินอำนาจอนุมัติ: ${esc(inputs[5]?.value || '-')} บาท</p>` });
+    if(names.length) data.sections.push({ title:'รายชื่อพนักงานที่ Deploy', html: table(['#','ชื่อ-นามสกุล / ตำแหน่ง'], names, []) });
+  }
+  return data;
+}
+function table(headers, rows, numericIndexes=[]) {
+  return `<table class="pdf-table"><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map((c,i) => `<td class="${numericIndexes.includes(i) ? 'num' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+function renderMemoPdf(data) {
+  const amountLine = data.total ? `<div class="pdf-total"><span>รวมเป็นเงิน</span><span>${esc(money(data.total))}</span></div>` : '';
+  const wordsLine = data.amountWords ? `<p class="pdf-muted">(${esc(data.amountWords)})</p>` : '';
+  return `<div class="pdf-page">
+    <div class="pdf-head"><div><div class="pdf-brand">Orbit Digital</div><div class="pdf-subbrand">PMO Memo Approval</div></div><div class="pdf-memo-no">${esc(data.memoNo)}<br>${esc(data.typeLabel)}</div></div>
+    <div class="pdf-title">บันทึกข้อความ</div>
+    <div class="pdf-meta"><div class="pdf-label">วันที่</div><div>${esc(data.date)}</div><div class="pdf-label">เรื่อง</div><div>${esc(data.subject)}</div><div class="pdf-label">เรียน</div><div>${esc(data.to || '-')}</div><div class="pdf-label">โครงการ</div><div>${esc(data.project || '-')}</div></div>
+    <p>ด้วยฝ่าย PMO มีความประสงค์ขออนุมัติรายการตามรายละเอียดด้านล่าง เพื่อสนับสนุนการดำเนินงานของโครงการให้เป็นไปตามแผนงาน</p>
+    <div class="pdf-section"><div class="pdf-section-title">เหตุผลในการขออนุมัติ</div><p>${esc(data.reason || '-')}</p></div>
+    ${data.sections.map(s => `<div class="pdf-section"><div class="pdf-section-title">${esc(s.title)}</div>${s.html}</div>`).join('')}
+    ${amountLine}${wordsLine}
+    <div class="pdf-alert">เอกสารนี้สร้างจากระบบ PMO Dashboard โดยอัตโนมัติ กรุณาตรวจสอบรายละเอียดก่อนนำส่งเพื่ออนุมัติจริง</div>
+    <div class="pdf-signatures"><div class="pdf-sign-box"><div class="pdf-sign-line"></div><div>${esc(data.reviewerName)}</div><div class="pdf-muted">${esc(data.reviewerTitle)}</div><div class="pdf-muted">${esc(data.reviewerDate)}</div></div><div class="pdf-sign-box"><div class="pdf-sign-line"></div><div>${esc(data.approverName)}</div><div class="pdf-muted">${esc(data.approverTitle)}</div><div class="pdf-muted">${esc(data.approverDate)}</div></div></div>
+  </div>`;
+}
+function validateMemo(data) {
+  const missing = [];
+  if(!data.type) missing.push('ประเภท Memo');
+  const projVal = val('#f-project');
+  if(!projVal) missing.push('โครงการ');
+  else if(projVal === 'other' && !val('#f-project-other')) missing.push('ชื่อโครงการ (กรอกเองเมื่อเลือก อื่นๆ)');
+  if(!data.to) missing.push('เรียน');
+  if(!data.reason) missing.push('เหตุผลในการขอ');
+  if(missing.length) {
+    alert('กรุณากรอกข้อมูลให้ครบ: ' + missing.join(', '));
+    return false;
+  }
+  return true;
+}
+async function generateMemoPdf() {
+  const data = collectMemoData();
+  if(!validateMemo(data)) return;
+  try {
+    const saved = saveMemo(data);
+    renderPendingMemos();
+    await downloadMemoPdf(saved);
+    setNextMemoNo();
+    alert(`บันทึก ${saved.memoNo} ใน Pending แล้ว และสร้าง PDF เรียบร้อย`);
+  } catch (e) {
+    console.error('Cannot save memo or generate PDF', e);
+    alert('เกิดข้อผิดพลาดระหว่างบันทึกหรือสร้าง PDF กรุณาลองใหม่อีกครั้ง');
+  }
+}
+function resetMemoForm() {
+  if(confirm('ล้างข้อมูลที่กรอกใน Create Memo หรือไม่?')) location.reload();
+}
+
+// ── Local memo storage (Milestone 1) ──
+const MEMO_STORAGE_KEY = 'orbit-pmo-memos-v1';
+let memoryMemos = [];
+function canUseLocalStorage() {
+  try {
+    const testKey = `${MEMO_STORAGE_KEY}-test`;
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    console.warn('localStorage is unavailable; memos will only persist until reload', e);
+    return false;
+  }
+}
+const HAS_LOCAL_STORAGE = canUseLocalStorage();
+function loadMemos() {
+  if(!HAS_LOCAL_STORAGE) return memoryMemos;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(MEMO_STORAGE_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.warn('Cannot load memos from localStorage', e);
+    return memoryMemos;
+  }
+}
+function storeMemos(memos) {
+  memoryMemos = Array.isArray(memos) ? memos : [];
+  if(!HAS_LOCAL_STORAGE) return;
+  try {
+    localStorage.setItem(MEMO_STORAGE_KEY, JSON.stringify(memoryMemos));
+  } catch (e) {
+    console.warn('Cannot save memos to localStorage; using in-memory fallback', e);
+  }
+}
+function currentMemoPrefix() {
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `ORB-${yy}${mm}`;
+}
+function nextMemoNo() {
+  const prefix = currentMemoPrefix();
+  const maxSeq = loadMemos().reduce((max, memo) => {
+    const match = String(memo.memoNo || '').match(new RegExp(`^${prefix}-(\\d{3})$`));
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+  return `${prefix}-${String(maxSeq + 1).padStart(3, '0')}`;
+}
+function setNextMemoNo(force=false) {
+  const input = document.getElementById('f-memo-no');
+  if(input && (force || !input.value.trim())) input.value = nextMemoNo();
+}
+function saveMemo(data) {
+  const now = new Date().toISOString();
+  const memos = loadMemos();
+  const existingIndex = memos.findIndex(memo => memo.memoNo === data.memoNo);
+  const saved = {
+    ...data,
+    id: data.memoNo,
+    status: 'pending',
+    createdAt: existingIndex >= 0 ? memos[existingIndex].createdAt : now,
+    updatedAt: now
+  };
+  if(existingIndex >= 0) memos[existingIndex] = saved;
+  else memos.push(saved);
+  storeMemos(memos);
+  return saved;
+}
+function pendingMemos() {
+  return loadMemos()
+    .filter(memo => memo.status === 'pending')
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+}
+function badgeClass(type) {
+  return { sl:'badge-blue', hw:'badge-gray', int:'badge-green', ent:'badge-amber', dep:'badge-purple' }[type] || 'badge-gray';
+}
+function shortDate(iso) {
+  if(!iso) return '-';
+  const d = new Date(iso);
+  if(Number.isNaN(d.getTime())) return '-';
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2, '0')}/${String(d.getFullYear()+543).slice(-2)}`;
+}
+function pendingAge(iso) {
+  if(!iso) return 'รอ 0 วัน';
+  const created = new Date(iso);
+  if(Number.isNaN(created.getTime())) return 'รอ 0 วัน';
+  const days = Math.max(0, Math.floor((Date.now() - created.getTime()) / 86400000));
+  return `รอ ${days} วัน`;
+}
+function renderPendingMemos() {
+  const list = document.getElementById('pending-list');
+  if(!list) return;
+  const memos = pendingMemos();
+  const total = memos.reduce((sum, memo) => sum + (Number(memo.total) || 0), 0);
+  const countEl = document.getElementById('pending-count');
+  const totalEl = document.getElementById('pending-total');
+  const latestEl = document.getElementById('pending-latest');
+  if(countEl) countEl.textContent = memos.length;
+  if(totalEl) totalEl.textContent = money(total);
+  if(latestEl) latestEl.textContent = memos[0]?.memoNo || '-';
+  if(!memos.length) {
+    list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px"><h3>ยังไม่มี Memo ที่สร้างไว้</h3><p>สร้าง Memo แล้วกด Save & Generate PDF เพื่อให้รายการมาแสดงที่นี่</p></div>`;
+    return;
+  }
+  list.innerHTML = memos.map(memo => `
+    <div class="pend-card">
+      <div class="pend-top">
+        <div>
+          <div class="pend-title">${esc(memo.memoNo)} — ${esc(memo.typeLabel)}</div>
+          <div class="pend-meta">
+            <span class="badge ${badgeClass(memo.type)}">${esc(String(memo.type || '').toUpperCase())}</span>
+            ${esc(memo.project || '-')} &nbsp;&middot;&nbsp; ${esc(memo.reviewerName || '-')} &nbsp;&middot;&nbsp; ${esc(shortDate(memo.createdAt))}
+            <span class="badge badge-amber">${esc(pendingAge(memo.createdAt))}</span>
+          </div>
+        </div>
+        <div class="pend-amount">${esc(money(memo.total || 0))}</div>
+      </div>
+      <div class="pend-detail">${esc(memo.subject || '-')} &nbsp;&middot;&nbsp; เหตุผล: ${esc(memo.reason || '-')}</div>
+      <div class="pend-actions">
+        <button class="btn-approve" onclick="approveMemo(${JSON.stringify(memo.memoNo)})">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Approve
+        </button>
+        <button class="btn-reject" onclick="rejectMemo(${JSON.stringify(memo.memoNo)})">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Reject
+        </button>
+        <button class="btn-sm" onclick="openMemoPdf(${JSON.stringify(memo.memoNo)})">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          ดู PDF
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function updateMemoStatus(memoNo, status, extra = {}) {
+  const memos = loadMemos();
+  const idx = memos.findIndex(memo => memo.memoNo === memoNo);
+  if(idx < 0) { alert('ไม่พบ Memo ที่เลือก'); return null; }
+  memos[idx] = { ...memos[idx], ...extra, status, updatedAt: new Date().toISOString() };
+  if(status === 'completed') memos[idx].approvedAt = memos[idx].updatedAt;
+  if(status === 'rejected') memos[idx].rejectedAt = memos[idx].updatedAt;
+  storeMemos(memos);
+  renderPendingMemos();
+  renderHistoryMemos();
+  return memos[idx];
+}
+function approveMemo(memoNo) {
+  if(!confirm(`Approve ${memoNo}?`)) return;
+  const memo = updateMemoStatus(memoNo, 'completed');
+  if(memo) alert(`${memoNo} ถูก Approve และย้ายไป History แล้ว`);
+}
+function rejectMemo(memoNo) {
+  const reason = prompt(`ระบุเหตุผล Reject สำหรับ ${memoNo}`);
+  if(reason === null) return;
+  const memo = updateMemoStatus(memoNo, 'rejected', { rejectionReason: reason.trim() || '-' });
+  if(memo) alert(`${memoNo} ถูก Reject และย้ายไป History แล้ว`);
+}
+function historyMemos() {
+  return loadMemos()
+    .filter(memo => ['completed', 'rejected'].includes(memo.status))
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+}
+function statusLabel(status) {
+  return status === 'completed' ? 'Completed' : status === 'rejected' ? 'Rejected' : status;
+}
+function statusBadgeClass(status) {
+  return status === 'completed' ? 'badge-green' : status === 'rejected' ? 'badge-red' : 'badge-gray';
+}
+function inHistoryRange(memo, range) {
+  if(range === 'all') return true;
+  const dt = new Date(memo.updatedAt || memo.createdAt || 0);
+  if(Number.isNaN(dt.getTime())) return false;
+  const now = new Date();
+  if(range === 'month') return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth();
+  if(range === 'last-month') {
+    const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return dt.getFullYear() === last.getFullYear() && dt.getMonth() === last.getMonth();
+  }
+  if(range === '3-months') {
+    const cutoff = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    return dt >= cutoff;
+  }
+  return true;
+}
+function filteredHistoryMemos() {
+  const status = val('#hist-status') || 'all';
+  const type = val('#hist-type') || 'all';
+  const project = val('#hist-project') || 'all';
+  const range = val('#hist-range') || 'month';
+  return historyMemos().filter(memo =>
+    (status === 'all' || memo.status === status) &&
+    (type === 'all' || memo.type === type) &&
+    (project === 'all' || memo.project === project) &&
+    inHistoryRange(memo, range)
+  );
+}
+function renderHistoryMemos() {
+  const body = document.getElementById('history-body');
+  if(!body) return;
+  const memos = filteredHistoryMemos();
+  if(!memos.length) {
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:34px 16px;color:var(--text-3)">ยังไม่มี Memo ใน History ตามเงื่อนไขที่เลือก</td></tr>`;
+    return;
+  }
+  body.innerHTML = memos.map(memo => `
+    <tr>
+      <td class="mono" style="padding-left:16px">${esc(memo.memoNo)}</td>
+      <td><span class="badge ${badgeClass(memo.type)}">${esc(String(memo.type || '').toUpperCase())}</span></td>
+      <td>${esc(memo.project || '-')}</td>
+      <td class="mono">${esc(money(memo.total || 0))}</td>
+      <td>${esc(shortDate(memo.updatedAt || memo.createdAt))}</td>
+      <td><span class="badge ${statusBadgeClass(memo.status)}">${esc(statusLabel(memo.status))}</span></td>
+      <td style="text-align:center"><button class="btn-sm" onclick="openMemoPdf(${JSON.stringify(memo.memoNo)})" style="padding:3px 8px;margin:0 auto">&#128196;</button></td>
+    </tr>`).join('');
+}
+function exportHistoryCsv() {
+  const memos = filteredHistoryMemos();
+  if(!memos.length) { alert('ไม่มีข้อมูล History สำหรับ Export'); return; }
+  const headers = ['Memo No','Type','Project','Amount','Status','Created At','Updated At','Subject','Reason','Rejection Reason'];
+  const csvRows = [headers, ...memos.map(memo => [
+    memo.memoNo || '',
+    String(memo.type || '').toUpperCase(),
+    memo.project || '',
+    Number(memo.total) || 0,
+    statusLabel(memo.status),
+    memo.createdAt || '',
+    memo.updatedAt || '',
+    memo.subject || '',
+    memo.reason || '',
+    memo.rejectionReason || ''
+  ])];
+  const csv = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `memo-history-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+async function downloadMemoPdf(data) {
+  const stage = document.getElementById('pdf-stage');
+  stage.innerHTML = renderMemoPdf(data);
+  const filename = `${data.memoNo || 'memo'}-${data.type || 'draft'}.pdf`;
+  if(window.html2pdf) {
+    try {
+      await html2pdf().set({ margin:0, filename, image:{ type:'jpeg', quality:0.98 }, html2canvas:{ scale:2, useCORS:true }, jsPDF:{ unit:'px', format:[794,1123], orientation:'portrait' } }).from(stage.firstElementChild).save();
+      return;
+    } catch (e) {
+      console.warn('html2pdf failed, falling back to print', e);
+    }
+  }
+  document.body.classList.add('printing-pdf');
+  try {
+    window.print();
+  } finally {
+    document.body.classList.remove('printing-pdf');
+  }
+}
+function openMemoPdf(memoNo) {
+  const memo = loadMemos().find(m => m.memoNo === memoNo);
+  if(!memo) { alert('ไม่พบ Memo ที่เลือก'); return; }
+  downloadMemoPdf(memo);
+}
+function initializeMemoApp() {
+  setNextMemoNo();
+  renderPendingMemos();
+  renderHistoryMemos();
+}
+
+// ── Account table ──
+function getAcctCols() { return Array.from(document.querySelectorAll('.acct-col')).map(i=>i.value.trim()).filter(c=>c); }
+function rebuildAcct() {
+  const cols = getAcctCols(); const show = cols.length ? cols : ['Col 1'];
+  const head = document.getElementById('acct-head');
+  const body = document.getElementById('acct-body');
+  head.innerHTML = `<tr style="background:var(--bg)"><th style="padding:6px 10px;text-align:left;border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase">Email</th>${show.map(c=>`<th style="padding:6px 10px;text-align:center;border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;width:80px">${c}</th>`).join('')}<th style="width:36px;border:1px solid var(--border)"></th></tr>`;
+  Array.from(body.querySelectorAll('tr')).forEach(tr => {
+    const email = tr.querySelector('.acct-email')?.value||'';
+    const vals = Array.from(tr.querySelectorAll('.acct-val')).map(s=>s.value);
+    tr.innerHTML = buildAcctRow(email, vals, show.length);
+  });
+  if(!body.children.length) addAcctRow();
+}
+function buildAcctRow(email, vals, n) {
+  let h = `<td style="padding:3px 6px;border:1px solid var(--border)"><input type="text" class="ri acct-email" placeholder="email@orbitdigital.co.th" value="${email}" style="font-size:11px;padding:3px 7px"></td>`;
+  for(let i=0;i<n;i++) h += `<td style="padding:3px 6px;border:1px solid var(--border);text-align:center"><select class="acct-val" style="font-size:11px;padding:2px 4px;width:100%;border:1px solid var(--border-md);border-radius:4px"><option${vals[i]==='-'||!vals[i]?' selected':''}>-</option><option${vals[i]==='✓'?' selected':''}>✓</option></select></td>`;
+  h += `<td style="padding:3px 4px;border:1px solid var(--border);text-align:center"><button class="rm-btn" onclick="this.closest('tr').remove()" style="width:24px;height:24px" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></td>`;
+  return h;
+}
+function addAcctRow() {
+  const cols = getAcctCols(); const n = cols.length||1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = buildAcctRow('', [], n);
+  document.getElementById('acct-body').appendChild(tr);
+}
+rebuildAcct();
+initializeMemoApp();
+</script>
 </body>
 </html>
