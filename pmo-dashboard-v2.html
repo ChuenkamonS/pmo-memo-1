@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMO Dashboard — Orbit Digital</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:        #185FA5;
+  --blue-50:     #E6F1FB;
+  --blue-100:    #B5D4F4;
+  --blue-600:    #185FA5;
+  --blue-800:    #0C447C;
+  --blue-900:    #042C53;
+  --green:       #3B6D11;
+  --green-50:    #EAF3DE;
+  --green-200:   #97C459;
+  --amber:       #854F0B;
+  --amber-50:    #FAEEDA;
+  --amber-200:   #EF9F27;
+  --red:         #A32D2D;
+  --red-50:      #FCEBEB;
+  --red-200:     #F09595;
+  --gray:        #5F5E5A;
+  --gray-50:     #F1EFE8;
+  --gray-200:    #B4B2A9;
+  --purple:      #3C3489;
+  --purple-50:   #EEEDFE;
+  --bg:          #F4F3EF;
+  --surface:     #FFFFFF;
+  --border:      rgba(0,0,0,0.07);
+  --border-md:   rgba(0,0,0,0.12);
+  --text:        #1C1C1A;
+  --text-2:      #5F5E5A;
+  --text-3:      #A09E98;
+  --r:           10px;
+  --r-sm:        6px;
+  --sidebar-w:   196px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── LAYOUT ── */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sb-logo {
+  padding: 16px 14px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.sb-dot {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sb-dot svg { width: 14px; height: 14px; fill: #fff; }
+.sb-brand { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.sb-brand-sub { font-size: 10px; color: var(--text-3); font-weight: 400; }
+
+.sb-nav { padding: 10px 8px; flex: 1; }
+.sb-section {
+  font-size: 9px; font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  padding: 0 8px;
+  margin: 12px 0 4px;
+}
+.sb-section:first-child { margin-top: 0; }
+
+.sb-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 1px;
+  transition: background .12s, color .12s;
+  user-select: none;
+}
+.sb-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: .7; }
+.sb-item:hover { background: var(--bg); color: var(--text); }
+.sb-item:hover svg { opacity: 1; }
+.sb-item.active { background: var(--blue-50); color: var(--blue-800); }
+.sb-item.active svg { opacity: 1; fill: var(--blue-800); stroke: var(--blue-800); }
+.sb-item .sb-badge {
+  margin-left: auto;
+  font-size: 9px; font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--amber-50);
+  color: var(--amber);
+}
+
+.sb-sub { margin-left: 4px; }
+.sb-sub-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 8px 5px 20px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: 11px;
+  margin-bottom: 1px;
+  border-left: 2px solid transparent;
+  transition: all .12s;
+  user-select: none;
+}
+.sb-sub-item svg { width: 13px; height: 13px; flex-shrink: 0; }
+.sb-sub-item:hover { background: var(--bg); color: var(--text-2); }
+.sb-sub-item.active {
+  color: var(--blue);
+  font-weight: 600;
+  border-left-color: var(--blue);
+  background: var(--blue-50);
+}
+.sb-sub-item .sb-badge {
+  margin-left: auto;
+  font-size: 9px; font-weight: 700;
+  padding: 1px 6px; border-radius: 10px;
+  background: var(--amber-50); color: var(--amber);
+}
+
+.sb-footer {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+}
+.sb-user {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background .12s;
+}
+.sb-user:hover { background: var(--bg); }
+.sb-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--blue-50); color: var(--blue-800);
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sb-uname { font-size: 12px; font-weight: 600; color: var(--text); }
+.sb-urole { font-size: 10px; color: var(--text-3); }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+.topbar {
+  height: 48px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.topbar-crumb { font-size: 12px; color: var(--text-3); }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.topbar-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-md);
+  background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2);
+  transition: background .12s;
+}
+.topbar-btn:hover { background: var(--bg); }
+.topbar-btn svg { width: 16px; height: 16px; }
+
+/* ── CONTENT ── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.card-head {
+  display: flex; align-items: center; gap: 9px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.card-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--blue-50); color: var(--blue-800);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.card-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.card-subtitle { font-size: 11px; color: var(--text-3); margin-left: 4px; }
+
+/* ── TYPE SELECTOR ── */
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.type-btn {
+  padding: 12px 8px;
+  border: 1.5px solid var(--border-md);
+  border-radius: var(--r);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+}
+.type-btn:hover {
+  border-color: var(--blue-100);
+  background: var(--blue-50);
+}
+.type-btn.selected {
+  border-color: var(--blue);
+  background: var(--blue-50);
+  box-shadow: 0 0 0 3px rgba(24,95,165,.1);
+}
+.type-code {
+  display: block;
+  font-size: 15px; font-weight: 700;
+  color: var(--blue-800);
+  margin-bottom: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.type-name {
+  display: block;
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.3;
+}
+.type-btn.selected .type-name { color: var(--blue-600); }
+
+/* ── FORM ── */
+.form-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.fg { display: flex; flex-direction: column; gap: 4px; }
+.fg label { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: .1px; }
+.fg input, .fg select, .fg textarea {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(24,95,165,.08);
+}
+.fg input[readonly] {
+  background: var(--bg);
+  color: var(--text-3);
+  border-color: var(--border);
+  cursor: default;
+}
+.fg input[readonly]:focus { box-shadow: none; border-color: var(--border); }
+.fg textarea { resize: vertical; min-height: 64px; }
+.form-note { font-size: 11px; color: var(--text-3); margin-top: 6px; }
+
+/* ── ITEMS TABLE ── */
+.items-hdr {
+  display: grid; gap: 7px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.items-hdr span { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .3px; }
+.item-row { display: grid; gap: 7px; align-items: center; margin-bottom: 6px; }
+.ri {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 13px;
+  padding: 6px 9px;
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+  transition: border-color .15s;
+  outline: none;
+}
+.ri:focus { border-color: var(--blue); }
+.rm-btn {
+  width: 30px; height: 30px;
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--red);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+  flex-shrink: 0;
+}
+.rm-btn:hover { background: var(--red-50); }
+.rm-btn svg { width: 13px; height: 13px; }
+
+.add-btn {
+  width: 100%; margin-top: 6px;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; font-weight: 500;
+  color: var(--blue);
+  background: var(--blue-50);
+  border: 1px dashed var(--blue-100);
+  border-radius: var(--r-sm);
+  padding: 7px;
+  cursor: pointer;
+  transition: background .12s;
+  text-align: center;
+}
+.add-btn:hover { background: var(--blue-100); }
+
+.total-box {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  margin-top: 10px;
+}
+.total-label { font-size: 12px; font-weight: 600; color: var(--blue-800); }
+.total-val { font-size: 18px; font-weight: 600; color: var(--blue-900); font-family: 'IBM Plex Mono', monospace; }
+
+/* ── ROW NAME ── */
+.row-name { display: grid; grid-template-columns: 20px 1fr 30px; gap: 6px; align-items: center; margin-bottom: 5px; }
+.name-num { font-size: 11px; color: var(--text-3); text-align: center; }
+
+/* ── FIELD SECTIONS ── */
+.fs { display: none; }
+.fs.active { display: block; }
+
+/* ── ACTIONS ── */
+.action-row { display: flex; gap: 8px; justify-content: flex-end; padding-top: 6px; }
+.btn-primary {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 13px; font-weight: 600;
+  padding: 9px 20px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s;
+}
+.btn-primary:hover { background: var(--blue-800); }
+.btn-ghost {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 13px; font-weight: 500;
+  padding: 9px 16px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-ghost:hover { background: var(--bg); }
+
+/* ── HINT ── */
+.form-hint {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-3);
+}
+.form-hint svg { width: 36px; height: 36px; margin-bottom: 10px; opacity: .4; }
+.form-hint p { font-size: 13px; }
+
+/* ── BADGES ── */
+.badge {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  display: inline-block; white-space: nowrap;
+}
+.badge-blue   { background: var(--blue-50);   color: var(--blue-800); }
+.badge-green  { background: var(--green-50);  color: var(--green); }
+.badge-amber  { background: var(--amber-50);  color: var(--amber); }
+.badge-red    { background: var(--red-50);    color: var(--red); }
+.badge-gray   { background: var(--gray-50);   color: var(--gray); }
+.badge-purple { background: var(--purple-50); color: var(--purple); }
+.mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+
+/* ── METRICS ── */
+.metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+}
+.metric-label { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
+.metric-val { font-size: 24px; font-weight: 600; }
+.metric-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+/* ── PENDING CARDS ── */
+.sec-label {
+  font-size: 10px; font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .5px;
+  margin-bottom: 8px; margin-top: 16px;
+}
+.sec-label:first-child { margin-top: 0; }
+.pend-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.pend-card:hover { border-color: var(--blue-100); }
+.pend-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.pend-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.pend-meta { font-size: 11px; color: var(--text-3); margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pend-amount { font-size: 14px; font-weight: 700; color: var(--blue-800); font-family: 'IBM Plex Mono', monospace; }
+.pend-detail {
+  font-size: 12px; color: var(--text-2);
+  background: var(--bg);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+.pend-actions { display: flex; gap: 6px; }
+.btn-approve {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; font-weight: 600;
+  padding: 6px 14px;
+  background: var(--green-50); color: var(--green);
+  border: 1px solid var(--green-200);
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .12s;
+}
+.btn-approve:hover { background: #C0DD97; }
+.btn-reject {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; font-weight: 500;
+  padding: 6px 14px;
+  background: var(--red-50); color: var(--red);
+  border: 1px solid var(--red-200);
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .12s;
+}
+.btn-reject:hover { background: #F7C1C1; }
+.btn-sm {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px;
+  padding: 6px 12px;
+  background: transparent; color: var(--text-3);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .12s;
+}
+.btn-sm:hover { background: var(--bg); color: var(--text-2); }
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ── FILTER ROW ── */
+.filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+.filter-row select {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; padding: 6px 10px;
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text);
+  cursor: pointer; outline: none;
+}
+.btn-export {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; font-weight: 500;
+  padding: 6px 12px;
+  background: var(--surface); color: var(--text-2);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-left: auto; transition: background .12s;
+}
+.btn-export:hover { background: var(--bg); }
+
+/* ── HISTORY TABLE ── */
+.hist-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.hist-table th {
+  text-align: left; padding: 8px 12px;
+  font-size: 10px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .4px;
+  border-bottom: 1px solid var(--border);
+}
+.hist-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.hist-table tr:last-child td { border-bottom: none; }
+.hist-table tbody tr { transition: background .1s; cursor: default; }
+.hist-table tbody tr:hover td { background: var(--bg); }
+
+/* ── PLACEHOLDER ── */
+.placeholder {
+  text-align: center; padding: 60px 20px; color: var(--text-3);
+}
+.placeholder svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: .3; }
+.placeholder h3 { font-size: 15px; font-weight: 600; color: var(--text-2); margin-bottom: 4px; }
+.placeholder p { font-size: 13px; }
+
+/* ── SVG ICONS ── */
+svg.icon { display: inline-block; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- ════════ SIDEBAR ════════ -->
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-dot">
+        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/></svg>
+      </div>
+      <div>
+        <div class="sb-brand">Orbit Digital</div>
+        <div class="sb-brand-sub">PMO Dashboard</div>
+      </div>
+    </div>
+
+    <div class="sb-nav">
+      <div class="sb-section">Memo</div>
+      <div class="sb-item active" id="nav-memo" onclick="toggleMemoSub(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Memo
+      </div>
+      <div class="sb-sub" id="memo-sub">
+        <div class="sb-sub-item active" onclick="swView('create',this,'Create Memo')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create
+        </div>
+        <div class="sb-sub-item" onclick="swView('pending',this,'Pending Memo')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Pending
+          <span class="sb-badge">2</span>
+        </div>
+        <div class="sb-sub-item" onclick="swView('history',this,'Memo History')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+          History
+        </div>
+      </div>
+
+      <div class="sb-section">Dashboard</div>
+      <div class="sb-item" onclick="swView('budget',this,'Budget Monitor')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Budget Monitor
+      </div>
+      <div class="sb-item" onclick="swView('license',this,'License Monitor')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        License Monitor
+      </div>
+    </div>
+
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar">CK</div>
+        <div>
+          <div class="sb-uname">Chuen K.</div>
+          <div class="sb-urole">PMO</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ MAIN ════════ -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title" id="page-title">Create Memo</div>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ════ CREATE ════ -->
+      <div id="view-create" class="view active">
+
+        <!-- Type selector -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-num">1</div>
+            <span class="card-title">เลือกประเภท Memo</span>
+          </div>
+          <div class="type-grid">
+            <div class="type-btn" onclick="selectType('sl',this)">
+              <span class="type-code">SL</span>
+              <span class="type-name">Software License</span>
+            </div>
+            <div class="type-btn" onclick="selectType('hw',this)">
+              <span class="type-code">HW</span>
+              <span class="type-name">Hardware</span>
+            </div>
+            <div class="type-btn" onclick="selectType('int',this)">
+              <span class="type-code">INT</span>
+              <span class="type-name">Team Activity</span>
+            </div>
+            <div class="type-btn" onclick="selectType('ent',this)">
+              <span class="type-code">ENT</span>
+              <span class="type-name">Client Expense</span>
+            </div>
+            <div class="type-btn" onclick="selectType('dep',this)">
+              <span class="type-code">DEP</span>
+              <span class="type-name">Deployment</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hint before type selected -->
+        <div id="form-hint" class="form-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <p>เลือกประเภท Memo ด้านบนเพื่อเริ่มกรอกข้อมูล</p>
+        </div>
+
+        <!-- Form body (hidden until type selected) -->
+        <div id="form-body" style="display:none">
+
+          <!-- General info -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-num">2</div>
+              <span class="card-title">ข้อมูลทั่วไป</span>
+            </div>
+            <div class="form-grid" style="margin-bottom:10px">
+              <div class="fg"><label>เลข Memo</label><input type="text" value="ORB-2605-009" readonly></div>
+              <div class="fg"><label>ลงวันที่</label><input type="text" id="f-date" readonly></div>
+              <div class="fg">
+                <label>โครงการ *</label>
+                <select>
+                  <option>— เลือกโครงการ —</option>
+                  <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
+                  <option>Release 2.1</option><option>Release 3</option>
+                </select>
+              </div>
+              <div class="fg"><label>เรียน *</label><input type="text" id="f-to" placeholder="ประธานเจ้าหน้าที่บริหาร"></div>
+            </div>
+            <div class="fg" style="margin-bottom:8px">
+              <label>หัวข้อเรื่อง <span style="font-weight:400;color:var(--text-3)">(แก้ไขได้ optional)</span></label>
+              <input type="text" id="f-subject" placeholder="เว้นว่างเพื่อใช้อัตโนมัติ">
+            </div>
+            <div class="fg">
+              <label>เหตุผลในการขอ *</label>
+              <select id="f-reason" onchange="toggleOther()">
+                <option value="">— เลือกเหตุผล —</option>
+              </select>
+            </div>
+            <div id="other-wrap" style="display:none;margin-top:8px">
+              <div class="fg"><label>ระบุเหตุผล *</label><textarea placeholder="กรอกเหตุผล..."></textarea></div>
+            </div>
+          </div>
+
+          <!-- Dynamic detail card -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-num">3</div>
+              <span class="card-title" id="detail-title">รายละเอียด</span>
+            </div>
+
+            <!-- SL fields -->
+            <div class="fs" id="fs-sl">
+              <div class="items-hdr" style="grid-template-columns:3fr 1.2fr 0.8fr 0.8fr 30px">
+                <span>ชื่อ Software</span><span>฿/เดือน</span><span>เดือน</span><span>จำนวน</span><span></span>
+              </div>
+              <div id="sl-rows">
+                <div class="item-row" style="grid-template-columns:3fr 1.2fr 0.8fr 0.8fr 30px">
+                  <input class="ri" type="text" placeholder="GitHub Copilot">
+                  <input class="ri sl-price" type="number" placeholder="600" oninput="calcSL()">
+                  <input class="ri sl-mo" type="number" value="12" oninput="calcSL()">
+                  <input class="ri sl-qty" type="number" placeholder="15" oninput="calcSL()">
+                  <button class="rm-btn" onclick="rmRow(this,'sl-rows');calcSL()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
+                </div>
+              </div>
+              <button class="add-btn" onclick="addSLRow()">+ เพิ่ม Software</button>
+              <div class="form-grid" style="margin-top:12px">
+                <div class="fg"><label>วันที่แปลงเรท USD→THB</label><input type="text" id="sl-ratedate" readonly></div>
+                <div class="fg"><label>จำนวนเงินเป็นตัวอักษร</label><input type="text" placeholder="เช่น สองแสนห้าหมื่นบาทถ้วน"></div>
+              </div>
+              <div class="total-box"><span class="total-label">Total Amount</span><span class="total-val" id="sl-total">฿0</span></div>
+            </div>
+
+            <!-- HW fields -->
+            <div class="fs" id="fs-hw">
+              <div class="items-hdr" style="grid-template-columns:3fr 1.4fr 1fr 30px">
+                <span>ชื่ออุปกรณ์</span><span>ราคา/ชิ้น (THB)</span><span>จำนวน</span><span></span>
+              </div>
+              <div id="hw-rows">
+                <div class="item-row" style="grid-template-columns:3fr 1.4fr 1fr 30px">
+                  <input class="ri" type="text" placeholder="MacBook Pro 14">
+                  <input class="ri hw-price" type="number" placeholder="79000" oninput="calcHW()">
+                  <input class="ri hw-qty" type="number" placeholder="2" oninput="calcHW()">
+                  <button class="rm-btn" onclick="rmRow(this,'hw-rows');calcHW()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </div>
+              </div>
+              <button class="add-btn" onclick="addHWRow()">+ เพิ่มอุปกรณ์</button>
+              <div class="form-grid" style="margin-top:12px">
+                <div class="fg"><label>จำนวนเงินเป็นตัวอักษร</label><input type="text" placeholder="เช่น หนึ่งแสนห้าหมื่นแปดพันบาทถ้วน"></div>
+                <div class="fg"><label>ผู้รับผิดชอบดูแลอุปกรณ์</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
+              </div>
+              <div class="total-box"><span class="total-label">Total Amount</span><span class="total-val" id="hw-total">฿0</span></div>
+            </div>
+
+            <!-- INT fields -->
+            <div class="fs" id="fs-int">
+              <div class="form-grid" style="margin-bottom:12px">
+                <div class="fg"><label>ไตรมาส / ครั้งที่</label><input type="text" placeholder="เช่น Q2 / 2568"></div>
+                <div class="fg"><label>วันที่จัดกิจกรรม *</label><input type="date"></div>
+                <div class="fg"><label>วงเงินต่อคน (บาท) *</label><input type="number" id="int-pp" value="1500" oninput="calcINT()"></div>
+                <div class="fg"><label>จำนวนเงินต่อคนเป็นตัวอักษร</label><input type="text" placeholder="หนึ่งพันห้าร้อยบาทถ้วน"></div>
+              </div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:7px">รายชื่อผู้เข้าร่วม *</div>
+              <div id="int-names">
+                <div class="row-name"><span class="name-num">1.</span><input class="ri int-name" type="text" placeholder="ชื่อ-นามสกุล ตำแหน่ง" oninput="calcINT()"><button class="rm-btn" onclick="rmName(this,'int-names');calcINT()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>
+              </div>
+              <button class="add-btn" onclick="addName('int-names','int-name',true)">+ เพิ่มรายชื่อ</button>
+              <div class="total-box"><span class="total-label">Total Amount</span><span class="total-val" id="int-total">฿0</span></div>
+            </div>
+
+            <!-- ENT fields -->
+            <div class="fs" id="fs-ent">
+              <div class="form-grid">
+                <div class="fg" style="grid-column:1/-1"><label>ชื่อลูกค้า / บริษัทที่เลี้ยง *</label><input type="text" placeholder="เช่น บริษัท ปตท. น้ำมันและการค้าปลีก จำกัด (มหาชน)"></div>
+                <div class="fg"><label>วันที่จัดงาน *</label><input type="date"></div>
+                <div class="fg"><label>เวลา *</label><input type="time" value="12:00"></div>
+                <div class="fg"><label>สถานที่ *</label><input type="text" placeholder="เช่น ร้านอาหาร The River Café"></div>
+                <div class="fg"><label>จำนวนผู้เข้าร่วม (คน) *</label><input type="number" placeholder="10"></div>
+                <div class="fg"><label>วงเงินรวม (บาท) *</label><input type="number" placeholder="50000"></div>
+                <div class="fg"><label>จำนวนเงินเป็นตัวอักษร</label><input type="text" placeholder="เช่น ห้าหมื่นบาทถ้วน"></div>
+              </div>
+            </div>
+
+            <!-- DEP fields -->
+            <div class="fs" id="fs-dep">
+              <div class="form-grid" style="margin-bottom:12px">
+                <div class="fg"><label>วันที่ Deploy (Start) *</label><input type="date"></div>
+                <div class="fg"><label>วันที่ Deploy (End) *</label><input type="date"></div>
+                <div class="fg"><label>สถานที่ Deploy *</label><input type="text" placeholder="เช่น สำนักงานลูกค้า"></div>
+                <div class="fg"><label>รูปแบบ</label>
+                  <select><option>Onsite</option><option>Online</option><option>Online / Onsite</option></select>
+                </div>
+                <div class="fg"><label>จำนวนเงินเป็นตัวอักษร</label><input type="text" placeholder="เช่น หนึ่งร้อยบาทถ้วน"></div>
+                <div class="fg"><label>วงเงินอำนาจอนุมัติ (บาท)</label><input type="text" value="500,000"></div>
+              </div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:7px">รายชื่อพนักงานที่ Deploy <span style="font-weight:400;color:var(--text-3)">(optional)</span></div>
+              <div id="dep-names">
+                <div class="row-name"><span class="name-num">1.</span><input class="ri dep-name" type="text" placeholder="ชื่อ-นามสกุล ตำแหน่ง"><button class="rm-btn" onclick="rmName(this,'dep-names')" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>
+              </div>
+              <button class="add-btn" onclick="addName('dep-names','dep-name',false)">+ เพิ่มรายชื่อ</button>
+            </div>
+
+          </div><!-- /dynamic card -->
+
+          <!-- Optional: Account table (SL only) -->
+          <div class="card" id="acct-card" style="display:none">
+            <div class="card-head">
+              <div class="card-num">4</div>
+              <span class="card-title">ตาราง Account</span>
+              <span class="card-subtitle">(optional)</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px">
+              <input class="ri acct-col" type="text" placeholder="Col 1 เช่น GitHub" style="font-size:11px;padding:5px 7px" oninput="rebuildAcct()">
+              <input class="ri acct-col" type="text" placeholder="Col 2" style="font-size:11px;padding:5px 7px" oninput="rebuildAcct()">
+              <input class="ri acct-col" type="text" placeholder="Col 3" style="font-size:11px;padding:5px 7px" oninput="rebuildAcct()">
+              <input class="ri acct-col" type="text" placeholder="Col 4" style="font-size:11px;padding:5px 7px" oninput="rebuildAcct()">
+              <input class="ri acct-col" type="text" placeholder="Col 5" style="font-size:11px;padding:5px 7px" oninput="rebuildAcct()">
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead id="acct-head"></thead>
+                <tbody id="acct-body"></tbody>
+              </table>
+            </div>
+            <button class="add-btn" onclick="addAcctRow()">+ เพิ่ม Account</button>
+          </div>
+
+          <!-- Reviewer & Approver -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-num" id="rev-num">4</div>
+              <span class="card-title">Reviewer & Approver</span>
+            </div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Reviewer</div>
+            <div class="form-grid-3" style="margin-bottom:14px">
+              <div class="fg"><label>ชื่อ Reviewer *</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
+              <div class="fg"><label>ตำแหน่ง *</label><input type="text" value="ผู้จัดการโครงการ"></div>
+              <div class="fg"><label>วันที่ลงนาม</label><input type="text" id="f-signdate" readonly></div>
+            </div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Approver</div>
+            <div class="form-grid-3">
+              <div class="fg"><label>ชื่อ Approver *</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
+              <div class="fg"><label>ตำแหน่ง *</label><input type="text" id="f-appr-title" value="ประธานเจ้าหน้าที่บริหาร"></div>
+              <div class="fg"><label>วันที่ลงนาม</label><input type="text" id="f-apprdate" readonly></div>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="btn-ghost">ยกเลิก</button>
+            <button class="btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Generate PDF
+            </button>
+          </div>
+
+        </div><!-- /form-body -->
+      </div><!-- /view-create -->
+
+      <!-- ════ PENDING ════ -->
+      <div id="view-pending" class="view">
+        <div class="metric-row">
+          <div class="metric-card">
+            <div class="metric-label">รอฉันอนุมัติ (A1)</div>
+            <div class="metric-val" style="color:var(--amber)">2</div>
+            <div class="metric-sub">ต้องดำเนินการ</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">ส่งต่อ A2 แล้ว</div>
+            <div class="metric-val" style="color:var(--blue)">1</div>
+            <div class="metric-sub">รอ Approver</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">รอนานที่สุด</div>
+            <div class="metric-val" style="font-size:18px;padding-top:3px">6 วัน</div>
+            <div class="metric-sub">ORB-2605-005</div>
+          </div>
+        </div>
+
+        <div class="sec-label">รอฉันอนุมัติ</div>
+
+        <div class="pend-card">
+          <div class="pend-top">
+            <div>
+              <div class="pend-title">ORB-2605-007 — Software License</div>
+              <div class="pend-meta">
+                <span class="badge badge-blue">SL</span>
+                AOA-MP &nbsp;&middot;&nbsp; นาย ปัณณ์ รัตน์วัฒนา &nbsp;&middot;&nbsp; 15 พ.ค. 69
+                <span class="badge badge-amber">รอ 3 วัน</span>
+              </div>
+            </div>
+            <div class="pend-amount">฿48,000</div>
+          </div>
+          <div class="pend-detail">GitHub Copilot 15 seats &times; 12 เดือน &nbsp;&middot;&nbsp; เหตุผล: เป็นโปรแกรมที่ได้รับการอนุมัติและใช้งานอยู่เดิม เพื่อให้การดำเนินโครงการเป็นไปอย่างต่อเนื่อง</div>
+          <div class="pend-actions">
+            <button class="btn-approve">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Approve
+            </button>
+            <button class="btn-reject">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Reject
+            </button>
+            <button class="btn-sm">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              ดู PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="pend-card">
+          <div class="pend-top">
+            <div>
+              <div class="pend-title">ORB-2605-005 — Team Activity</div>
+              <div class="pend-meta">
+                <span class="badge badge-green">INT</span>
+                Geo9 &nbsp;&middot;&nbsp; น.ส. พรทิพย์ ศรีสุวรรณ &nbsp;&middot;&nbsp; 12 พ.ค. 69
+                <span class="badge badge-red">รอ 6 วัน</span>
+              </div>
+            </div>
+            <div class="pend-amount">฿30,000</div>
+          </div>
+          <div class="pend-detail">Team Activity Q2/2569 &nbsp;&middot;&nbsp; 20 คน &times; ฿1,500/คน &nbsp;&middot;&nbsp; วันที่ 25 พ.ค. 69 &nbsp;&middot;&nbsp; เพื่อเสริมสร้างกำลังใจในการปฏิบัติงาน</div>
+          <div class="pend-actions">
+            <button class="btn-approve">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Approve
+            </button>
+            <button class="btn-reject">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Reject
+            </button>
+            <button class="btn-sm">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              ดู PDF
+            </button>
+          </div>
+        </div>
+
+        <hr class="divider">
+        <div class="sec-label">ส่งต่อ A2 แล้ว — ไม่ต้องดำเนินการ</div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="hist-table">
+            <thead><tr>
+              <th style="width:28%;padding-left:16px">เลข Memo</th>
+              <th style="width:12%">Type</th>
+              <th style="width:22%">โครงการ</th>
+              <th style="width:16%">วงเงิน</th>
+              <th style="width:22%">รอ Approver</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="mono" style="padding-left:16px">ORB-2605-006</td>
+                <td><span class="badge badge-gray">DEP</span></td>
+                <td>TTB</td>
+                <td class="mono">฿12,500</td>
+                <td><span class="badge badge-purple">รอ ผอ.วิชัย</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ════ HISTORY ════ -->
+      <div id="view-history" class="view">
+        <div class="filter-row">
+          <select><option>ทุกสถานะ</option><option>Completed</option><option>Rejected</option></select>
+          <select><option>ทุกประเภท</option><option>SL</option><option>HW</option><option>INT</option><option>ENT</option><option>DEP</option></select>
+          <select><option>ทุกโครงการ</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option></select>
+          <select><option>เดือนนี้</option><option>เดือนที่แล้ว</option><option>3 เดือน</option><option>ทั้งหมด</option></select>
+          <button class="btn-export">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="hist-table">
+            <thead><tr>
+              <th style="width:22%;padding-left:16px">เลข Memo</th>
+              <th style="width:10%">Type</th>
+              <th style="width:18%">โครงการ</th>
+              <th style="width:14%">วงเงิน</th>
+              <th style="width:12%">วันที่</th>
+              <th style="width:14%">สถานะ</th>
+              <th style="width:10%;text-align:center">PDF</th>
+            </tr></thead>
+            <tbody>
+              <tr><td class="mono" style="padding-left:16px">ORB-2605-008</td><td><span class="badge badge-blue">SL</span></td><td>Release 3</td><td class="mono">฿48,000</td><td>18/05/69</td><td><span class="badge badge-green">Completed</span></td><td style="text-align:center"><button class="btn-sm" style="padding:3px 8px;margin:0 auto">&#x2913;</button></td></tr>
+              <tr><td class="mono" style="padding-left:16px">ORB-2605-004</td><td><span class="badge badge-gray">HW</span></td><td>AOA-MP</td><td class="mono">฿79,000</td><td>05/05/69</td><td><span class="badge badge-green">Completed</span></td><td style="text-align:center"><button class="btn-sm" style="padding:3px 8px;margin:0 auto">&#x2913;</button></td></tr>
+              <tr><td class="mono" style="padding-left:16px">ORB-2605-003</td><td><span class="badge badge-amber">ENT</span></td><td>TTB</td><td class="mono">฿25,000</td><td>03/05/69</td><td><span class="badge badge-red">Rejected</span></td><td style="text-align:center"><button class="btn-sm" style="padding:3px 8px;margin:0 auto">&#128196;</button></td></tr>
+              <tr><td class="mono" style="padding-left:16px">ORB-2604-012</td><td><span class="badge badge-blue">SL</span></td><td>Geo9</td><td class="mono">฿36,000</td><td>28/04/69</td><td><span class="badge badge-green">Completed</span></td><td style="text-align:center"><button class="btn-sm" style="padding:3px 8px;margin:0 auto">&#x2913;</button></td></tr>
+              <tr><td class="mono" style="padding-left:16px">ORB-2604-010</td><td><span class="badge badge-green">INT</span></td><td>TTB</td><td class="mono">฿45,000</td><td>20/04/69</td><td><span class="badge badge-green">Completed</span></td><td style="text-align:center"><button class="btn-sm" style="padding:3px 8px;margin:0 auto">&#x2913;</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ════ BUDGET ════ -->
+      <div id="view-budget" class="view">
+        <div class="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <h3>Budget Monitor</h3>
+          <p>Monthly summary, project breakdown, trend chart — coming soon</p>
+        </div>
+      </div>
+
+      <!-- ════ LICENSE ════ -->
+      <div id="view-license" class="view">
+        <div class="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <h3>License Monitor</h3>
+          <p>Registry, renewal alerts, expiry tracking — coming soon</p>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// ── Date helpers ──
+const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function thaiDate(d) { return `${d.getDate()} ${MONTHS_TH[d.getMonth()]} ${d.getFullYear()+543}`; }
+const TODAY = thaiDate(new Date());
+['f-date','f-signdate','f-apprdate','sl-ratedate'].forEach(id => { const el = document.getElementById(id); if(el) el.value = TODAY; });
+
+// ── Type config ──
+const TYPE_CFG = {
+  sl:  { title:'รายการ Software *', to:'ประธานเจ้าหน้าที่บริหาร', apprTitle:'ประธานเจ้าหน้าที่บริหาร', reasons:['เป็นโปรแกรมที่ได้รับการอนุมัติและใช้งานอยู่เดิม เพื่อให้การดำเนินโครงการเป็นไปอย่างต่อเนื่องและมีประสิทธิภาพ','เป็นโปรแกรมใหม่ที่จำเป็นต้องใช้เพื่อพัฒนาโครงการ','เพื่ออัปเกรดการใช้งานโปรแกรมให้รองรับการทำงานของทีมที่เพิ่มขึ้น'] },
+  hw:  { title:'รายการ Hardware *', to:'ประธานเจ้าหน้าที่บริหาร', apprTitle:'ประธานเจ้าหน้าที่บริหาร', reasons:['เพื่อใช้ในการพัฒนาและทดสอบระบบของโครงการ','เพื่อทดแทนอุปกรณ์เดิมที่เสื่อมสภาพและไม่สามารถใช้งานได้','เพื่อรองรับการขยายทีมและเพิ่มประสิทธิภาพการทำงาน'] },
+  int: { title:'รายชื่อผู้เข้าร่วม *', to:'Project director โครงการ', apprTitle:'ผู้อำนวยการโครงการ', reasons:['เพื่อเสริมสร้างกำลังใจในการปฏิบัติงาน และส่งเสริมการทำงานเป็นทีม','เพื่อเสริมสร้างความสัมพันธ์ในทีมและพัฒนาการทำงานร่วมกัน'] },
+  ent: { title:'รายละเอียดงานเลี้ยงรับรอง', to:'ประธานเจ้าหน้าที่บริหาร', apprTitle:'ประธานเจ้าหน้าที่บริหาร', reasons:['เพื่อขอบคุณลูกค้าในโครงการ','เพื่อเสริมสร้างความสัมพันธ์กับลูกค้า'] },
+  dep: { title:'รายละเอียด Deployment', to:'ผู้อำนวยการโครงการ', apprTitle:'ผู้อำนวยการโครงการ', reasons:['เพื่อความละเอียดในการเบิกแยก Online / Onsite','เพื่อสนับสนุนการ Deployment ให้เป็นไปอย่างราบรื่นและมีประสิทธิภาพ'] }
+};
+
+function selectType(type, btn) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.querySelectorAll('.fs').forEach(s => s.classList.remove('active'));
+  document.getElementById('fs-'+type).classList.add('active');
+  const cfg = TYPE_CFG[type];
+  document.getElementById('detail-title').textContent = cfg.title;
+  document.getElementById('f-to').value = cfg.to;
+  document.getElementById('f-appr-title').value = cfg.apprTitle;
+  const rs = document.getElementById('f-reason');
+  rs.innerHTML = '<option value="">— เลือกเหตุผล —</option>';
+  cfg.reasons.forEach(r => { const o = document.createElement('option'); o.value = r; o.textContent = r; rs.appendChild(o); });
+  rs.innerHTML += '<option value="other">อื่นๆ (กรอกเอง)</option>';
+  document.getElementById('form-hint').style.display = 'none';
+  document.getElementById('form-body').style.display = 'block';
+  document.getElementById('acct-card').style.display = type === 'sl' ? 'block' : 'none';
+  document.getElementById('rev-num').textContent = type === 'sl' ? '5' : '4';
+}
+
+function toggleOther() {
+  const sel = document.getElementById('f-reason');
+  document.getElementById('other-wrap').style.display = sel.value === 'other' ? 'block' : 'none';
+}
+
+// ── Navigation ──
+function swView(id, el, title) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.sb-sub-item').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.getElementById('page-title').textContent = title;
+  if(el) el.classList.add('active');
+  if(['create','pending','history'].includes(id)) document.getElementById('nav-memo').classList.add('active');
+}
+function toggleMemoSub(el) {
+  el.classList.add('active');
+  swView('create', document.querySelector('#memo-sub .sb-sub-item'), 'Create Memo');
+}
+
+// ── Calcs ──
+function calcSL() {
+  let t = 0;
+  document.querySelectorAll('#sl-rows .item-row').forEach(r => {
+    const p = parseFloat(r.querySelector('.sl-price')?.value)||0;
+    const m = parseInt(r.querySelector('.sl-mo')?.value)||0;
+    const q = parseInt(r.querySelector('.sl-qty')?.value)||0;
+    t += p*m*q;
+  });
+  document.getElementById('sl-total').textContent = '฿'+t.toLocaleString('th-TH');
+}
+function calcHW() {
+  let t = 0;
+  document.querySelectorAll('#hw-rows .item-row').forEach(r => {
+    const p = parseFloat(r.querySelector('.hw-price')?.value)||0;
+    const q = parseInt(r.querySelector('.hw-qty')?.value)||0;
+    t += p*q;
+  });
+  document.getElementById('hw-total').textContent = '฿'+t.toLocaleString('th-TH');
+}
+function calcINT() {
+  const pp = parseFloat(document.getElementById('int-pp')?.value)||0;
+  const n = document.querySelectorAll('.int-name').length;
+  document.getElementById('int-total').textContent = '฿'+(pp*n).toLocaleString('th-TH');
+}
+
+// ── Row helpers ──
+function rmRow(btn, containerId) {
+  const c = document.getElementById(containerId);
+  if(c.querySelectorAll('.item-row').length > 1) btn.closest('.item-row').remove();
+}
+function addSLRow() {
+  const d = document.createElement('div'); d.className='item-row'; d.style.gridTemplateColumns='3fr 1.2fr 0.8fr 0.8fr 30px';
+  d.innerHTML = `<input class="ri" type="text" placeholder="ชื่อ Software"><input class="ri sl-price" type="number" placeholder="ราคา" oninput="calcSL()"><input class="ri sl-mo" type="number" value="12" oninput="calcSL()"><input class="ri sl-qty" type="number" placeholder="จำนวน" oninput="calcSL()"><button class="rm-btn" onclick="rmRow(this,'sl-rows');calcSL()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
+  document.getElementById('sl-rows').appendChild(d);
+}
+function addHWRow() {
+  const d = document.createElement('div'); d.className='item-row'; d.style.gridTemplateColumns='3fr 1.4fr 1fr 30px';
+  d.innerHTML = `<input class="ri" type="text" placeholder="ชื่ออุปกรณ์"><input class="ri hw-price" type="number" placeholder="ราคา" oninput="calcHW()"><input class="ri hw-qty" type="number" placeholder="จำนวน" oninput="calcHW()"><button class="rm-btn" onclick="rmRow(this,'hw-rows');calcHW()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
+  document.getElementById('hw-rows').appendChild(d);
+}
+function addName(cid, cls, doCalc) {
+  const c = document.getElementById(cid);
+  const n = c.querySelectorAll('.row-name').length+1;
+  const d = document.createElement('div'); d.className='row-name';
+  const calcStr = doCalc ? ';calcINT()' : '';
+  d.innerHTML = `<span class="name-num">${n}.</span><input class="ri ${cls}" type="text" placeholder="ชื่อ-นามสกุล ตำแหน่ง" oninput="${doCalc?'calcINT()':''}"><button class="rm-btn" onclick="rmName(this,'${cid}')${calcStr}" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
+  c.appendChild(d);
+}
+function rmName(btn, cid) {
+  const c = document.getElementById(cid);
+  if(c.querySelectorAll('.row-name').length > 1) btn.closest('.row-name').remove();
+  c.querySelectorAll('.name-num').forEach((el,i) => el.textContent=(i+1)+'.');
+}
+
+// ── Account table ──
+function getAcctCols() { return Array.from(document.querySelectorAll('.acct-col')).map(i=>i.value.trim()).filter(c=>c); }
+function rebuildAcct() {
+  const cols = getAcctCols(); const show = cols.length ? cols : ['Col 1'];
+  const head = document.getElementById('acct-head');
+  const body = document.getElementById('acct-body');
+  head.innerHTML = `<tr style="background:var(--bg)"><th style="padding:6px 10px;text-align:left;border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase">Email</th>${show.map(c=>`<th style="padding:6px 10px;text-align:center;border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;width:80px">${c}</th>`).join('')}<th style="width:36px;border:1px solid var(--border)"></th></tr>`;
+  Array.from(body.querySelectorAll('tr')).forEach(tr => {
+    const email = tr.querySelector('.acct-email')?.value||'';
+    const vals = Array.from(tr.querySelectorAll('.acct-val')).map(s=>s.value);
+    tr.innerHTML = buildAcctRow(email, vals, show.length);
+  });
+  if(!body.children.length) addAcctRow();
+}
+function buildAcctRow(email, vals, n) {
+  let h = `<td style="padding:3px 6px;border:1px solid var(--border)"><input type="text" class="ri acct-email" placeholder="email@orbitdigital.co.th" value="${email}" style="font-size:11px;padding:3px 7px"></td>`;
+  for(let i=0;i<n;i++) h += `<td style="padding:3px 6px;border:1px solid var(--border);text-align:center"><select class="acct-val" style="font-size:11px;padding:2px 4px;width:100%;border:1px solid var(--border-md);border-radius:4px"><option${vals[i]==='-'||!vals[i]?' selected':''}>-</option><option${vals[i]==='✓'?' selected':''}>✓</option></select></td>`;
+  h += `<td style="padding:3px 4px;border:1px solid var(--border);text-align:center"><button class="rm-btn" onclick="this.closest('tr').remove()" style="width:24px;height:24px" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></td>`;
+  return h;
+}
+function addAcctRow() {
+  const cols = getAcctCols(); const n = cols.length||1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = buildAcctRow('', [], n);
+  document.getElementById('acct-body').appendChild(tr);
+}
+rebuildAcct();
+</script>
+</body>
+</html>
