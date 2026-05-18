@@ -1243,11 +1243,16 @@ function validateMemo(data) {
 async function generateMemoPdf() {
   const data = collectMemoData();
   if(!validateMemo(data)) return;
-  const saved = saveMemo(data);
-  renderPendingMemos();
-  await downloadMemoPdf(saved);
-  setNextMemoNo();
-  alert(`บันทึก ${saved.memoNo} ใน Pending แล้ว และสร้าง PDF เรียบร้อย`);
+  try {
+    const saved = saveMemo(data);
+    renderPendingMemos();
+    await downloadMemoPdf(saved);
+    setNextMemoNo();
+    alert(`บันทึก ${saved.memoNo} ใน Pending แล้ว และสร้าง PDF เรียบร้อย`);
+  } catch (e) {
+    console.error('Cannot save memo or generate PDF', e);
+    alert('เกิดข้อผิดพลาดระหว่างบันทึกหรือสร้าง PDF กรุณาลองใหม่อีกครั้ง');
+  }
 }
 function resetMemoForm() {
   if(confirm('ล้างข้อมูลที่กรอกใน Create Memo หรือไม่?')) location.reload();
@@ -1255,12 +1260,37 @@ function resetMemoForm() {
 
 // ── Local memo storage (Milestone 1) ──
 const MEMO_STORAGE_KEY = 'orbit-pmo-memos-v1';
+let memoryMemos = [];
+function canUseLocalStorage() {
+  try {
+    const testKey = `${MEMO_STORAGE_KEY}-test`;
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    console.warn('localStorage is unavailable; memos will only persist until reload', e);
+    return false;
+  }
+}
+const HAS_LOCAL_STORAGE = canUseLocalStorage();
 function loadMemos() {
-  try { return JSON.parse(localStorage.getItem(MEMO_STORAGE_KEY) || '[]'); }
-  catch (e) { console.warn('Cannot load memos from localStorage', e); return []; }
+  if(!HAS_LOCAL_STORAGE) return memoryMemos;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(MEMO_STORAGE_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.warn('Cannot load memos from localStorage', e);
+    return memoryMemos;
+  }
 }
 function storeMemos(memos) {
-  localStorage.setItem(MEMO_STORAGE_KEY, JSON.stringify(memos));
+  memoryMemos = Array.isArray(memos) ? memos : [];
+  if(!HAS_LOCAL_STORAGE) return;
+  try {
+    localStorage.setItem(MEMO_STORAGE_KEY, JSON.stringify(memoryMemos));
+  } catch (e) {
+    console.warn('Cannot save memos to localStorage; using in-memory fallback', e);
+  }
 }
 function currentMemoPrefix() {
   const d = new Date();
@@ -1322,9 +1352,12 @@ function renderPendingMemos() {
   if(!list) return;
   const memos = pendingMemos();
   const total = memos.reduce((sum, memo) => sum + (Number(memo.total) || 0), 0);
-  document.getElementById('pending-count').textContent = memos.length;
-  document.getElementById('pending-total').textContent = money(total);
-  document.getElementById('pending-latest').textContent = memos[0]?.memoNo || '-';
+  const countEl = document.getElementById('pending-count');
+  const totalEl = document.getElementById('pending-total');
+  const latestEl = document.getElementById('pending-latest');
+  if(countEl) countEl.textContent = memos.length;
+  if(totalEl) totalEl.textContent = money(total);
+  if(latestEl) latestEl.textContent = memos[0]?.memoNo || '-';
   if(!memos.length) {
     list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px"><h3>ยังไม่มี Memo ที่สร้างไว้</h3><p>สร้าง Memo แล้วกด Save & Generate PDF เพื่อให้รายการมาแสดงที่นี่</p></div>`;
     return;
@@ -1364,8 +1397,11 @@ async function downloadMemoPdf(data) {
     }
   }
   document.body.classList.add('printing-pdf');
-  window.print();
-  document.body.classList.remove('printing-pdf');
+  try {
+    window.print();
+  } finally {
+    document.body.classList.remove('printing-pdf');
+  }
 }
 function openMemoPdf(memoNo) {
   const memo = loadMemos().find(m => m.memoNo === memoNo);
