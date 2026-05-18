@@ -2,6 +2,63 @@
 // views/budget.js — Budget Monitor
 // ─────────────────────────────────────────
 
+let bgtTypeChart = null;
+let bgtProjChart = null;
+
+const BGT_TYPE_NAMES = { sl:'Software License', hw:'Hardware', int:'Team Activity', ent:'Client Expense', dep:'Deployment' };
+const BGT_TYPE_COLORS = { sl:'#185FA5', hw:'#5F5E5A', int:'#3B6D11', ent:'#854F0B', dep:'#3C3489' };
+const BGT_PROJ_PALETTE = ['#185FA5','#3B6D11','#854F0B','#3C3489','#A32D2D','#0C447C','#97C459','#5F5E5A'];
+
+function renderBudgetPieChart(canvasId, emptyId, chartRef, rows, labelFn, colorFn) {
+  const canvas = document.getElementById(canvasId);
+  const emptyEl = document.getElementById(emptyId);
+  if(!canvas) return chartRef;
+
+  if(chartRef) { chartRef.destroy(); chartRef = null; }
+
+  const hasData = rows.length && rows.some(([, d]) => d.total > 0);
+  canvas.style.display = hasData ? '' : 'none';
+  if(emptyEl) emptyEl.classList.toggle('is-visible', !hasData);
+  if(!hasData || typeof Chart === 'undefined') return null;
+
+  const labels = rows.map(([key]) => labelFn(key));
+  const data = rows.map(([, d]) => d.total);
+  const colors = rows.map(([key], i) => colorFn(key, i));
+  const total = data.reduce((s, v) => s + v, 0);
+
+  chartRef = new Chart(canvas, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { family: "'IBM Plex Sans Thai', sans-serif", size: 11 },
+            padding: 10,
+            boxWidth: 12
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label(ctx) {
+              const v = ctx.parsed || 0;
+              const pct = total ? Math.round(v / total * 100) : 0;
+              return ` ${ctx.label}: ${money(v)} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+  return chartRef;
+}
+
 function getBudgetMemos(range, project) {
   const now = new Date();
   return loadMemos().filter(memo => {
@@ -32,7 +89,6 @@ function renderBudget() {
   document.getElementById('bgt-pending-count').textContent = pending.length + ' รายการ';
 
   // Group by type
-  const TYPE_NAMES = { sl:'Software License', hw:'Hardware', int:'Team Activity', ent:'Client Expense', dep:'Deployment' };
   const byType = {};
   completed.forEach(m => {
     if(!byType[m.type]) byType[m.type] = { count:0, total:0 };
@@ -40,7 +96,7 @@ function renderBudget() {
     byType[m.type].total += Number(m.total)||0;
   });
   const topType = Object.entries(byType).sort((a,b) => b[1].total-a[1].total)[0];
-  document.getElementById('bgt-top-type').textContent = topType ? (TYPE_NAMES[topType[0]]||topType[0].toUpperCase()) : '—';
+  document.getElementById('bgt-top-type').textContent = topType ? (BGT_TYPE_NAMES[topType[0]]||topType[0].toUpperCase()) : '—';
   document.getElementById('bgt-top-type-amt').textContent = topType ? money(topType[1].total) : '';
 
   // Group by project
@@ -55,9 +111,14 @@ function renderBudget() {
   document.getElementById('bgt-top-proj').textContent = topProj ? topProj[0] : '—';
   document.getElementById('bgt-top-proj-amt').textContent = topProj ? money(topProj[1].total) : '';
 
-  // By type table
+  // By type table + pie chart
   const typeBody = document.getElementById('bgt-type-body');
   const typeRows = Object.entries(byType).sort((a,b) => b[1].total-a[1].total);
+  bgtTypeChart = renderBudgetPieChart(
+    'bgt-type-chart', 'bgt-type-chart-empty', bgtTypeChart, typeRows,
+    key => BGT_TYPE_NAMES[key] || key.toUpperCase(),
+    key => BGT_TYPE_COLORS[key] || '#B4B2A9'
+  );
   typeBody.innerHTML = !typeRows.length
     ? '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-3)">ยังไม่มีข้อมูล</td></tr>'
     : typeRows.map(([type, d]) => {
@@ -75,9 +136,14 @@ function renderBudget() {
         </tr>`;
       }).join('');
 
-  // By project table
+  // By project table + pie chart
   const projBody = document.getElementById('bgt-proj-body');
   const projRows = Object.entries(byProj).sort((a,b) => b[1].total-a[1].total);
+  bgtProjChart = renderBudgetPieChart(
+    'bgt-proj-chart', 'bgt-proj-chart-empty', bgtProjChart, projRows,
+    key => key,
+    (_, i) => BGT_PROJ_PALETTE[i % BGT_PROJ_PALETTE.length]
+  );
   projBody.innerHTML = !projRows.length
     ? '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-3)">ยังไม่มีข้อมูล</td></tr>'
     : projRows.map(([proj, d]) => {

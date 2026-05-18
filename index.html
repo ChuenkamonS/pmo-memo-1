@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 :root {
   --blue:        #185FA5;
@@ -1015,6 +1016,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
             <div class="card-head" style="margin-bottom:10px;padding-bottom:10px">
               <span class="card-title">แยกตามประเภท</span>
             </div>
+            <div class="bgt-chart-wrap">
+              <canvas id="bgt-type-chart"></canvas>
+              <div id="bgt-type-chart-empty" class="bgt-chart-empty">ยังไม่มีข้อมูล</div>
+            </div>
             <table class="hist-table" id="bgt-type-table">
               <thead><tr>
                 <th style="width:30%">ประเภท</th>
@@ -1028,6 +1033,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
           <div class="card">
             <div class="card-head" style="margin-bottom:10px;padding-bottom:10px">
               <span class="card-title">แยกตามโครงการ</span>
+            </div>
+            <div class="bgt-chart-wrap">
+              <canvas id="bgt-proj-chart"></canvas>
+              <div id="bgt-proj-chart-empty" class="bgt-chart-empty">ยังไม่มีข้อมูล</div>
             </div>
             <table class="hist-table" id="bgt-proj-table">
               <thead><tr>

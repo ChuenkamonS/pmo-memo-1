@@ -362,6 +362,26 @@ body {
 .metric-val { font-size: 24px; font-weight: 600; }
 .metric-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
 
+/* ── BUDGET CHARTS ── */
+.bgt-chart-wrap {
+  position: relative;
+  max-width: 260px;
+  margin: 0 auto 14px;
+  aspect-ratio: 1;
+}
+.bgt-chart-wrap canvas { width: 100% !important; height: 100% !important; }
+.bgt-chart-empty {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-3);
+  text-align: center;
+}
+.bgt-chart-empty.is-visible { display: flex; }
+
 /* ── PENDING CARDS ── */
 .sec-label {
   font-size: 10px; font-weight: 700; color: var(--text-3);
