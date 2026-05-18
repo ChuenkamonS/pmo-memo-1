@@ -992,11 +992,8 @@ svg.icon { display: inline-block; vertical-align: middle; }
 const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 function thaiDate(d) { return `${d.getDate()} ${MONTHS_TH[d.getMonth()]} ${d.getFullYear()+543}`; }
 const TODAY = thaiDate(new Date());
-// Set date inputs to today (ISO format for <input type="date">)
 const todayISO = new Date().toISOString().slice(0,10);
-['f-date','f-signdate','f-apprdate','sl-ratedate'].forEach(id => {
-  const el = document.getElementById(id); if(el) el.value = todayISO;
-});
+['f-date','f-signdate','f-apprdate','sl-ratedate'].forEach(id => { const el = document.getElementById(id); if(el) el.value = todayISO; });
 
 // ── Type config ──
 let selectedType = null;
@@ -1032,8 +1029,8 @@ function selectType(type, btn) {
 function toggleOtherProject() {
   const sel = document.getElementById('f-project');
   const wrap = document.getElementById('project-other-wrap');
-  wrap.style.display = sel.value === 'other' ? 'block' : 'none';
-  if(sel.value === 'other') document.getElementById('f-project-other').focus();
+  if(wrap) wrap.style.display = sel.value === 'other' ? 'block' : 'none';
+  if(sel.value === 'other') document.getElementById('f-project-other')?.focus();
 }
 function toggleOther() {
   const sel = document.getElementById('f-reason');
@@ -1242,7 +1239,7 @@ function validateMemo(data) {
   if(!data.type) missing.push('ประเภท Memo');
   const projVal = val('#f-project');
   if(!projVal) missing.push('โครงการ');
-  else if(projVal === 'other' && !val('#f-project-other')) missing.push('ชื่อโครงการ (กรอกเองเมื่อเลือก อื่นๆ)');
+  else if(projVal === 'other' && !val('#f-project-other')) missing.push('ชื่อโครงการ (กรุณากรอกเมื่อเลือก อื่นๆ)');
   if(!data.to) missing.push('เรียน');
   if(!data.reason) missing.push('เหตุผลในการขอ');
   if(missing.length) {
@@ -1374,7 +1371,7 @@ function renderPendingMemos() {
     return;
   }
   list.innerHTML = memos.map(memo => `
-    <div class="pend-card">
+    <div class="pend-card" data-memo-no="${esc(memo.memoNo)}">
       <div class="pend-top">
         <div>
           <div class="pend-title">${esc(memo.memoNo)} — ${esc(memo.typeLabel)}</div>
@@ -1388,20 +1385,30 @@ function renderPendingMemos() {
       </div>
       <div class="pend-detail">${esc(memo.subject || '-')} &nbsp;&middot;&nbsp; เหตุผล: ${esc(memo.reason || '-')}</div>
       <div class="pend-actions">
-        <button class="btn-approve" onclick="approveMemo(${JSON.stringify(memo.memoNo)})">
+        <button class="btn-approve" data-action="approve" data-memo="${esc(memo.memoNo)}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           Approve
         </button>
-        <button class="btn-reject" onclick="rejectMemo(${JSON.stringify(memo.memoNo)})">
+        <button class="btn-reject" data-action="reject" data-memo="${esc(memo.memoNo)}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           Reject
         </button>
-        <button class="btn-sm" onclick="openMemoPdf(${JSON.stringify(memo.memoNo)})">
+        <button class="btn-sm" data-action="pdf" data-memo="${esc(memo.memoNo)}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           ดู PDF
         </button>
       </div>
     </div>`).join('');
+  // Event delegation — attach once after render
+  list.onclick = function(e) {
+    const btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    const memoNo = btn.dataset.memo;
+    const action = btn.dataset.action;
+    if(action === 'approve') approveMemo(memoNo);
+    else if(action === 'reject') rejectMemo(memoNo);
+    else if(action === 'pdf') openMemoPdf(memoNo);
+  };
 }
 
 function updateMemoStatus(memoNo, status, extra = {}) {
@@ -1482,8 +1489,13 @@ function renderHistoryMemos() {
       <td class="mono">${esc(money(memo.total || 0))}</td>
       <td>${esc(shortDate(memo.updatedAt || memo.createdAt))}</td>
       <td><span class="badge ${statusBadgeClass(memo.status)}">${esc(statusLabel(memo.status))}</span></td>
-      <td style="text-align:center"><button class="btn-sm" onclick="openMemoPdf(${JSON.stringify(memo.memoNo)})" style="padding:3px 8px;margin:0 auto">&#128196;</button></td>
+      <td style="text-align:center"><button class="btn-sm" data-action="pdf" data-memo="${esc(memo.memoNo)}" style="padding:3px 8px;margin:0 auto">&#128196;</button></td>
     </tr>`).join('');
+  // Event delegation for history PDF buttons
+  body.closest('table').onclick = function(e) {
+    const btn = e.target.closest('[data-action="pdf"]');
+    if(btn) openMemoPdf(btn.dataset.memo);
+  };
 }
 function exportHistoryCsv() {
   const memos = filteredHistoryMemos();
