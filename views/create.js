@@ -151,6 +151,9 @@ function collectMemoData() {
     memoNo: val('#f-memo-no'), date: dateInput(val('#f-date')),
     project: val('#f-project')==='other' ? val('#f-project-other') : val('#f-project'),
     to: val('#f-to'), subject: val('#f-subject'), reason: selectedReason(),
+    requesterName:  val('#f-requester-name') || 'Chuen K.',
+    requesterTitle: val('#f-requester-title') || 'PMO',
+    submittedAt:    new Date().toISOString(),
     reviewerName: revInputs[0]||'-', reviewerTitle: revInputs[1]||'-',
     reviewerDate: dateInput(revInputs[2]) || TODAY,
     approverName: revInputs[3]||'-', approverTitle: revInputs[4]||'-',
@@ -216,6 +219,7 @@ function validateMemo(data) {
   else if(val('#f-project')==='other' && !val('#f-project-other')) missing.push('ชื่อโครงการ');
   if(!data.to) missing.push('เรียน');
   if(!data.reason) missing.push('เหตุผลในการขอ');
+  if(!val('#f-requester-name')) missing.push('ชื่อผู้ขอ');
   if(!data.reviewerName || data.reviewerName==='-') missing.push('ชื่อ Reviewer');
   if(!data.approverName || data.approverName==='-') missing.push('ชื่อ Approver');
   if(data.type==='sl' && !Array.from(document.querySelectorAll('#sl-rows .item-row input:first-child')).some(i=>i.value.trim()))
