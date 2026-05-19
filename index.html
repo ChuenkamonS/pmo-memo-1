@@ -919,25 +919,73 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ PENDING ════ -->
       <div id="view-pending" class="view">
-        <div class="metric-row">
+        <!-- Metric row -->
+        <div class="metric-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
           <div class="metric-card">
-            <div class="metric-label">รอฉันอนุมัติ (A1)</div>
+            <div class="metric-label">รอฉันอนุมัติ</div>
             <div class="metric-val" id="pending-count" style="color:var(--amber)">0</div>
             <div class="metric-sub">ต้องดำเนินการ</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">มูลค่ารวม Pending</div>
-            <div class="metric-val" id="pending-total" style="color:var(--blue);font-size:20px">฿0</div>
-            <div class="metric-sub">จาก Memo ที่สร้างแล้ว</div>
+            <div class="metric-val" id="pending-total" style="color:var(--blue);font-size:18px">฿0</div>
+            <div class="metric-sub">รวมทุกรายการ</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">รายการล่าสุด</div>
-            <div class="metric-val" id="pending-latest" style="font-size:18px;padding-top:3px">-</div>
-            <div class="metric-sub">เลข Memo ล่าสุด</div>
+            <div class="metric-label">เลข Memo ล่าสุด</div>
+            <div class="metric-val" id="pending-latest" style="font-size:16px;margin-top:4px">-</div>
+            <div class="metric-sub">รายการใหม่สุด</div>
           </div>
         </div>
 
-        <div class="sec-label">รอฉันอนุมัติ</div>
+        <!-- Tabs -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;gap:4px;background:var(--bg);border-radius:var(--r);padding:4px">
+            <button class="pend-tab-btn active" data-tab="awaiting" onclick="switchPendingTab('awaiting')"
+              style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:var(--surface);color:var(--text)">
+              Awaiting My Approval <span class="tab-count badge badge-amber" style="margin-left:4px"></span>
+            </button>
+            <button class="pend-tab-btn" data-tab="submitted" onclick="switchPendingTab('submitted')"
+              style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
+              My Submitted <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
+            </button>
+            <button class="pend-tab-btn" data-tab="rejected" onclick="switchPendingTab('rejected')"
+              style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
+              Rejected <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
+            </button>
+            <button class="pend-tab-btn" data-tab="drafts" onclick="switchPendingTab('drafts')"
+              style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
+              Drafts <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
+            </button>
+          </div>
+          <button class="btn-sm" onclick="openBudgetSettings()" style="font-size:12px;padding:6px 12px">
+            ⚙ Budget Settings
+          </button>
+        </div>
+
+        <!-- Search & Filters -->
+        <div class="filter-row" style="margin-bottom:12px">
+          <input type="text" id="pend-search" placeholder="🔍 ค้นหา Memo No, Project, Requester..."
+            style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface);min-width:240px;outline:none"
+            oninput="_pendingSearch=this.value;renderPendingContent()">
+          <select id="pend-filter-type" onchange="renderPendingContent()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+            <option value="all">ทุกประเภท</option>
+            <option value="sl">SL</option><option value="hw">HW</option>
+            <option value="int">INT</option><option value="ent">ENT</option><option value="dep">DEP</option>
+          </select>
+          <select id="pend-filter-project" onchange="renderPendingContent()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+            <option value="all">ทุกโครงการ</option>
+            <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
+            <option>Release 2.1</option><option>Release 3</option>
+          </select>
+          <select id="pend-filter-priority" onchange="renderPendingContent()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+            <option value="all">ทุก Priority</option>
+            <option value="normal">Normal</option>
+            <option value="urgent">Urgent</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+
         <div id="pending-list"></div>
       </div>
 
@@ -1307,5 +1355,87 @@ svg.icon { display: inline-block; vertical-align: middle; }
 <!-- Boot -->
 <script src="views/device.js"></script>
 <script>initApp();</script>
+
+<!-- Approve Modal -->
+<div id="approve-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--r);padding:24px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px">✓ Approve Memo</div>
+    <div style="background:var(--bg);border-radius:var(--r-sm);padding:12px;margin-bottom:14px;font-size:13px">
+      <div style="display:grid;grid-template-columns:80px 1fr;gap:6px">
+        <span style="color:var(--text-3);font-size:11px;font-weight:600">MEMO</span><span id="approve-memo-no" style="font-family:monospace;font-weight:600"></span>
+        <span style="color:var(--text-3);font-size:11px;font-weight:600">PROJECT</span><span id="approve-project"></span>
+        <span style="color:var(--text-3);font-size:11px;font-weight:600">AMOUNT</span><span id="approve-amount" style="font-weight:700;color:var(--blue-800)"></span>
+        <span style="color:var(--text-3);font-size:11px;font-weight:600">SUBJECT</span><span id="approve-subject" style="color:var(--text-2)"></span>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:16px">
+      <label>Approval Note <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
+      <textarea id="approve-note" placeholder="เช่น Approved via email, Reviewed in meeting..." style="min-height:60px;font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);width:100%;resize:vertical;outline:none"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeApproveModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmApprove()" style="background:var(--green);border-color:var(--green)">✓ Confirm Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="reject-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--r);padding:24px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">✕ Reject Memo</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:14px">Memo: <strong id="reject-memo-no"></strong></div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>เหตุผลการ Reject *</label>
+      <select id="reject-reason-select" style="font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);width:100%;outline:none">
+        <option value="">— เลือกเหตุผล —</option>
+        <option>Budget Issue</option>
+        <option>Missing Quotation</option>
+        <option>Incorrect Information</option>
+        <option>Duplicate Request</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="fg" style="margin-bottom:16px">
+      <label>รายละเอียดเพิ่มเติม <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
+      <textarea id="reject-comment" placeholder="อธิบายเพิ่มเติม..." style="min-height:60px;font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);width:100%;resize:vertical;outline:none"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeRejectModal()">Cancel</button>
+      <button class="btn-reject" onclick="confirmReject()" style="padding:9px 20px;font-size:13px;font-weight:600">✕ Confirm Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--r);padding:24px;width:640px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700">Memo Detail</div>
+      <button onclick="closeDetailModal()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:20px">&#x2715;</button>
+    </div>
+    <div id="detail-content"></div>
+    <div id="detail-actions" style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)"></div>
+  </div>
+</div>
+
+<!-- Budget Settings Modal -->
+<div id="budget-settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--r);padding:24px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700">⚙ Budget Ceiling ต่อโครงการ</div>
+      <button onclick="closeBudgetSettings()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:20px">&#x2715;</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:14px">ตั้งวงเงินสูงสุดต่อโครงการ เพื่อแสดง Budget Impact ใน Pending Memo</div>
+    <div id="budget-settings-body"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn-ghost" onclick="closeBudgetSettings()">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveBudgetSettings()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.pend-tab-btn.active { background:var(--surface)!important;color:var(--blue)!important;font-weight:600!important;box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+</style>
 </body>
 </html>
