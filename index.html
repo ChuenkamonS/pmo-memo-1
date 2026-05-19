@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PMO Dashboard — Orbit Digital</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 :root {
   --blue:        #185FA5;
@@ -892,6 +890,12 @@ svg.icon { display: inline-block; vertical-align: middle; }
               <div class="card-num" id="rev-num">4</div>
               <span class="card-title">Reviewer & Approver</span>
             </div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">ผู้ขอ (Requester)</div>
+            <div class="form-grid-3" style="margin-bottom:14px">
+              <div class="fg"><label>ชื่อผู้ขอ *</label><input type="text" id="f-requester-name" value="Chuen K." placeholder="ชื่อ-นามสกุล"></div>
+              <div class="fg"><label>ตำแหน่ง</label><input type="text" id="f-requester-title" value="PMO" placeholder="เช่น PMO"></div>
+              <div class="fg"></div>
+            </div>
             <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Reviewer</div>
             <div class="form-grid-3" style="margin-bottom:14px">
               <div class="fg"><label>ชื่อ Reviewer *</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
@@ -919,7 +923,6 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ PENDING ════ -->
       <div id="view-pending" class="view">
-        <!-- Metric row -->
         <div class="metric-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
           <div class="metric-card">
             <div class="metric-label">รอฉันอนุมัติ</div>
@@ -941,32 +944,26 @@ svg.icon { display: inline-block; vertical-align: middle; }
         <!-- Tabs -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <div style="display:flex;gap:4px;background:var(--bg);border-radius:var(--r);padding:4px">
-            <button class="pend-tab-btn active" data-tab="awaiting" onclick="switchPendingTab('awaiting')"
-              style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:var(--surface);color:var(--text)">
+            <button class="pend-tab-btn active" data-tab="awaiting" onclick="switchPendingTab('awaiting')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:var(--surface);color:var(--text)">
               Awaiting My Approval <span class="tab-count badge badge-amber" style="margin-left:4px"></span>
             </button>
-            <button class="pend-tab-btn" data-tab="submitted" onclick="switchPendingTab('submitted')"
-              style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
+            <button class="pend-tab-btn" data-tab="submitted" onclick="switchPendingTab('submitted')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
               My Submitted <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
             </button>
-            <button class="pend-tab-btn" data-tab="rejected" onclick="switchPendingTab('rejected')"
-              style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
+            <button class="pend-tab-btn" data-tab="rejected" onclick="switchPendingTab('rejected')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
               Rejected <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
             </button>
-            <button class="pend-tab-btn" data-tab="drafts" onclick="switchPendingTab('drafts')"
-              style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
+            <button class="pend-tab-btn" data-tab="drafts" onclick="switchPendingTab('drafts')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
               Drafts <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
             </button>
           </div>
-          <button class="btn-sm" onclick="openBudgetSettings()" style="font-size:12px;padding:6px 12px">
-            ⚙ Budget Settings
-          </button>
+          <button class="btn-sm" onclick="openBudgetSettings()" style="font-size:12px;padding:6px 12px">⚙ Budget Settings</button>
         </div>
 
         <!-- Search & Filters -->
         <div class="filter-row" style="margin-bottom:12px">
           <input type="text" id="pend-search" placeholder="🔍 ค้นหา Memo No, Project, Requester..."
-            style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface);min-width:240px;outline:none"
+            style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface);min-width:220px;outline:none"
             oninput="_pendingSearch=this.value;renderPendingContent()">
           <select id="pend-filter-type" onchange="renderPendingContent()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
             <option value="all">ทุกประเภท</option>
@@ -978,11 +975,11 @@ svg.icon { display: inline-block; vertical-align: middle; }
             <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
             <option>Release 2.1</option><option>Release 3</option>
           </select>
-          <select id="pend-filter-priority" onchange="renderPendingContent()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
-            <option value="all">ทุก Priority</option>
-            <option value="normal">Normal</option>
-            <option value="urgent">Urgent</option>
-            <option value="critical">Critical</option>
+          <select id="pend-sort" onchange="renderPendingContent()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+            <option value="date-desc">วันที่ล่าสุด</option>
+            <option value="amount-desc">วงเงิน มาก→น้อย</option>
+            <option value="amount-asc">วงเงิน น้อย→มาก</option>
+            <option value="wait-desc">รอนานสุด</option>
           </select>
         </div>
 
@@ -1004,13 +1001,14 @@ svg.icon { display: inline-block; vertical-align: middle; }
         <div class="card" style="padding:0;overflow:hidden">
           <table class="hist-table">
             <thead><tr>
-              <th style="width:22%;padding-left:16px">เลข Memo</th>
-              <th style="width:10%">Type</th>
-              <th style="width:18%">โครงการ</th>
-              <th style="width:14%">วงเงิน</th>
-              <th style="width:12%">วันที่</th>
-              <th style="width:14%">สถานะ</th>
-              <th style="width:10%;text-align:center">PDF</th>
+              <th style="width:18%;padding-left:16px">เลข Memo</th>
+              <th style="width:8%">Type</th>
+              <th style="width:13%">โครงการ</th>
+              <th style="width:11%">วงเงิน</th>
+              <th style="width:10%">วันที่</th>
+              <th style="width:10%">สถานะ</th>
+              <th style="width:22%">Rejection Reason</th>
+              <th style="width:8%;text-align:center">PDF</th>
             </tr></thead>
             <tbody id="history-body"></tbody>
           </table>
@@ -1068,10 +1066,6 @@ svg.icon { display: inline-block; vertical-align: middle; }
             <div class="card-head" style="margin-bottom:10px;padding-bottom:10px">
               <span class="card-title">แยกตามประเภท</span>
             </div>
-            <div class="bgt-chart-wrap">
-              <canvas id="bgt-type-chart"></canvas>
-              <div id="bgt-type-chart-empty" class="bgt-chart-empty">ยังไม่มีข้อมูล</div>
-            </div>
             <table class="hist-table" id="bgt-type-table">
               <thead><tr>
                 <th style="width:30%">ประเภท</th>
@@ -1085,10 +1079,6 @@ svg.icon { display: inline-block; vertical-align: middle; }
           <div class="card">
             <div class="card-head" style="margin-bottom:10px;padding-bottom:10px">
               <span class="card-title">แยกตามโครงการ</span>
-            </div>
-            <div class="bgt-chart-wrap">
-              <canvas id="bgt-proj-chart"></canvas>
-              <div id="bgt-proj-chart-empty" class="bgt-chart-empty">ยังไม่มีข้อมูล</div>
             </div>
             <table class="hist-table" id="bgt-proj-table">
               <thead><tr>
@@ -1124,26 +1114,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
       <!-- ════ LICENSE ════ -->
       <div id="view-license" class="view">
         <div class="metric-row" style="grid-template-columns:repeat(4,1fr)">
-          <div class="metric-card">
-            <div class="metric-label">Active Licenses</div>
-            <div class="metric-val" id="lic-active" style="color:var(--blue)">0</div>
-            <div class="metric-sub" id="lic-active-cost"></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">หมดอายุใน ≤ 30 วัน</div>
-            <div class="metric-val" id="lic-expiring" style="color:var(--amber)">0</div>
-            <div class="metric-sub">ต้องต่ออายุเร็วๆ นี้</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">หมดอายุแล้ว</div>
-            <div class="metric-val" id="lic-expired" style="color:var(--red)">0</div>
-            <div class="metric-sub">ต้องดำเนินการด่วน</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">ค่าใช้จ่าย/เดือน</div>
-            <div class="metric-val" id="lic-monthly" style="font-size:18px;margin-top:4px">฿0</div>
-            <div class="metric-sub">รวมทุก SL ที่ active</div>
-          </div>
+          <div class="metric-card"><div class="metric-label">Active Licenses</div><div class="metric-val" id="lic-active" style="color:var(--blue)">0</div><div class="metric-sub" id="lic-active-cost"></div></div>
+          <div class="metric-card"><div class="metric-label">หมดอายุใน ≤ 30 วัน</div><div class="metric-val" id="lic-expiring" style="color:var(--amber)">0</div><div class="metric-sub">ต้องต่ออายุเร็วๆ นี้</div></div>
+          <div class="metric-card"><div class="metric-label">หมดอายุแล้ว</div><div class="metric-val" id="lic-expired" style="color:var(--red)">0</div><div class="metric-sub">ต้องดำเนินการด่วน</div></div>
+          <div class="metric-card"><div class="metric-label">ค่าใช้จ่าย/เดือน</div><div class="metric-val" id="lic-monthly" style="font-size:18px;margin-top:4px">฿0</div><div class="metric-sub">รวมทุก SL ที่ active</div></div>
         </div>
         <div id="lic-alert-section" style="display:none;margin-bottom:12px">
           <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⚠ ต้องต่ออายุเร็วๆ นี้</div>
@@ -1171,75 +1145,23 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ DEVICE REGISTRY ════ -->
       <div id="view-device" class="view">
-
-        <!-- Metric cards -->
         <div class="metric-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
-          <div class="metric-card">
-            <div class="metric-label">Total Devices</div>
-            <div class="metric-val" id="dev-total" style="color:var(--blue)">0</div>
-            <div class="metric-sub" id="dev-total-sub"></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">In Use</div>
-            <div class="metric-val" id="dev-inuse" style="color:var(--green)">0</div>
-            <div class="metric-sub">มีผู้ถือครองอยู่</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Warranty หมดแล้ว</div>
-            <div class="metric-val" id="dev-warranty-expired" style="color:var(--red)">0</div>
-            <div class="metric-sub">ต้องดำเนินการ</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Available</div>
-            <div class="metric-val" id="dev-available" style="color:var(--gray)">0</div>
-            <div class="metric-sub">ยังไม่มีผู้ถือ</div>
-          </div>
+          <div class="metric-card"><div class="metric-label">Total Devices</div><div class="metric-val" id="dev-total" style="color:var(--blue)">0</div><div class="metric-sub" id="dev-total-sub"></div></div>
+          <div class="metric-card"><div class="metric-label">In Use</div><div class="metric-val" id="dev-inuse" style="color:var(--green)">0</div><div class="metric-sub">มีผู้ถือครองอยู่</div></div>
+          <div class="metric-card"><div class="metric-label">Warranty หมดแล้ว</div><div class="metric-val" id="dev-warranty-expired" style="color:var(--red)">0</div><div class="metric-sub">ต้องดำเนินการ</div></div>
+          <div class="metric-card"><div class="metric-label">Available</div><div class="metric-val" id="dev-available" style="color:var(--gray)">0</div><div class="metric-sub">ยังไม่มีผู้ถือ</div></div>
         </div>
-
-        <!-- Action bar -->
         <div class="filter-row">
-          <select id="dev-filter-type" onchange="renderDevice()">
-            <option value="all">ทุกประเภท</option>
-            <option value="mobile">Mobile Phone</option>
-            <option value="laptop">Laptop</option>
-            <option value="tablet">Tablet</option>
-            <option value="other">Other</option>
-          </select>
-          <select id="dev-filter-status" onchange="renderDevice()">
-            <option value="all">ทุกสถานะ</option>
-            <option value="in-use">In Use</option>
-            <option value="available">Available</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="retired">Retired</option>
-          </select>
-          <select id="dev-filter-project" onchange="renderDevice()">
-            <option value="all">ทุกโครงการ</option>
-            <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
-            <option>Release 2.1</option><option>Release 3</option>
-          </select>
-          <button class="btn-export" onclick="exportDeviceCsv()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export CSV
-          </button>
-          <button class="btn-primary" style="margin-left:auto" onclick="openDeviceModal()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add Device
-          </button>
+          <select id="dev-filter-type" onchange="renderDevice()"><option value="all">ทุกประเภท</option><option value="mobile">Mobile Phone</option><option value="laptop">Laptop</option><option value="tablet">Tablet</option><option value="other">Other</option></select>
+          <select id="dev-filter-status" onchange="renderDevice()"><option value="all">ทุกสถานะ</option><option value="in-use">In Use</option><option value="available">Available</option><option value="maintenance">Maintenance</option><option value="retired">Retired</option></select>
+          <select id="dev-filter-project" onchange="renderDevice()"><option value="all">ทุกโครงการ</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option><option>Release 2.1</option><option>Release 3</option></select>
+          <button class="btn-export" onclick="exportDeviceCsv()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export CSV</button>
+          <button class="btn-primary" style="margin-left:auto" onclick="openDeviceModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Device</button>
         </div>
-
-        <!-- Device table -->
         <div class="card" style="padding:0;overflow:hidden">
           <table class="hist-table">
             <thead><tr>
-              <th style="width:18%;padding-left:16px">Device Name</th>
-              <th style="width:10%">Type</th>
-              <th style="width:14%">Serial No.</th>
-              <th style="width:14%">ผู้ถือ</th>
-              <th style="width:12%">โครงการ</th>
-              <th style="width:10%">สภาพ</th>
-              <th style="width:12%">Warranty</th>
-              <th style="width:10%;text-align:center">สถานะ</th>
-              <th style="width:8%;text-align:center">Action</th>
+              <th style="width:18%;padding-left:16px">Device Name</th><th style="width:10%">Type</th><th style="width:14%">Serial No.</th><th style="width:14%">ผู้ถือ</th><th style="width:12%">โครงการ</th><th style="width:10%">สภาพ</th><th style="width:12%">Warranty</th><th style="width:10%;text-align:center">สถานะ</th><th style="width:8%;text-align:center">Action</th>
             </tr></thead>
             <tbody id="dev-table-body"></tbody>
           </table>
@@ -1250,109 +1172,16 @@ svg.icon { display: inline-block; vertical-align: middle; }
   </div><!-- /main -->
 </div><!-- /layout -->
 
-<!-- Device Modal -->
-<div id="device-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:center;justify-content:center">
-  <div style="background:var(--surface);border-radius:var(--r);padding:24px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-      <div style="font-size:15px;font-weight:700;color:var(--text)" id="dev-modal-title">Add Device</div>
-      <button onclick="closeDeviceModal()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:20px;line-height:1">&#x2715;</button>
-    </div>
-    <input type="hidden" id="dev-edit-id">
-    <div class="form-grid" style="margin-bottom:10px">
-      <div class="fg">
-        <label>Device Name *</label>
-        <input type="text" id="dev-name" placeholder="เช่น iPhone 15 Pro">
-      </div>
-      <div class="fg">
-        <label>Type *</label>
-        <select id="dev-type">
-          <option value="mobile">Mobile Phone</option>
-          <option value="laptop">Laptop</option>
-          <option value="tablet">Tablet</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label>Serial Number</label>
-        <input type="text" id="dev-serial" placeholder="S/N หรือ IMEI">
-      </div>
-      <div class="fg">
-        <label>Asset Tag</label>
-        <input type="text" id="dev-asset" placeholder="เช่น OD-001">
-      </div>
-    </div>
-    <div class="form-grid" style="margin-bottom:10px">
-      <div class="fg">
-        <label>ผู้ถือครอง</label>
-        <input type="text" id="dev-owner" placeholder="ชื่อ-นามสกุล">
-      </div>
-      <div class="fg">
-        <label>วันที่รับอุปกรณ์</label>
-        <input type="date" id="dev-assigned-date">
-      </div>
-      <div class="fg">
-        <label>โครงการ</label>
-        <select id="dev-project">
-          <option value="">— ไม่ระบุ —</option>
-          <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
-          <option>Release 2.1</option><option>Release 3</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label>Return Date</label>
-        <input type="date" id="dev-return-date">
-      </div>
-    </div>
-    <div class="form-grid" style="margin-bottom:10px">
-      <div class="fg">
-        <label>Warranty Expiry</label>
-        <input type="date" id="dev-warranty">
-      </div>
-      <div class="fg">
-        <label>สภาพ (Condition)</label>
-        <select id="dev-condition">
-          <option value="new">New</option>
-          <option value="good">Good</option>
-          <option value="fair">Fair</option>
-          <option value="poor">Poor</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label>สถานะ</label>
-        <select id="dev-status">
-          <option value="in-use">In Use</option>
-          <option value="available">Available</option>
-          <option value="maintenance">Maintenance</option>
-          <option value="retired">Retired</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label>Link HW Memo</label>
-        <input type="text" id="dev-memo-ref" placeholder="เช่น ORB-2605-004">
-      </div>
-    </div>
-    <div class="fg" style="margin-bottom:16px">
-      <label>หมายเหตุ</label>
-      <textarea id="dev-note" placeholder="รายละเอียดเพิ่มเติม..." style="min-height:52px"></textarea>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn-ghost" onclick="closeDeviceModal()">ยกเลิก</button>
-      <button class="btn-primary" onclick="saveDevice()">บันทึก</button>
-    </div>
-  </div>
-</div>
-
 <div id="pdf-stage" class="pdf-stage" aria-hidden="true"></div>
 
 <!-- Core: shared utils, storage, navigation, PDF -->
 <script src="app.js"></script>
-<!-- Views: loaded in dependency order -->
+<!-- Views -->
 <script src="views/create.js"></script>
 <script src="views/pending.js"></script>
 <script src="views/history.js"></script>
 <script src="views/budget.js"></script>
 <script src="views/license.js"></script>
-<!-- Boot -->
 <script src="views/device.js"></script>
 <script>initApp();</script>
 
@@ -1374,7 +1203,7 @@ svg.icon { display: inline-block; vertical-align: middle; }
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn-ghost" onclick="closeApproveModal()">Cancel</button>
-      <button class="btn-primary" onclick="confirmApprove()" style="background:var(--green);border-color:var(--green)">✓ Confirm Approve</button>
+      <button class="btn-primary" onclick="confirmApprove()" style="background:var(--green)">✓ Confirm Approve</button>
     </div>
   </div>
 </div>
@@ -1388,11 +1217,8 @@ svg.icon { display: inline-block; vertical-align: middle; }
       <label>เหตุผลการ Reject *</label>
       <select id="reject-reason-select" style="font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);width:100%;outline:none">
         <option value="">— เลือกเหตุผล —</option>
-        <option>Budget Issue</option>
-        <option>Missing Quotation</option>
-        <option>Incorrect Information</option>
-        <option>Duplicate Request</option>
-        <option>Other</option>
+        <option>Budget Issue</option><option>Missing Quotation</option>
+        <option>Incorrect Information</option><option>Duplicate Request</option><option>Other</option>
       </select>
     </div>
     <div class="fg" style="margin-bottom:16px">
@@ -1430,6 +1256,43 @@ svg.icon { display: inline-block; vertical-align: middle; }
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
       <button class="btn-ghost" onclick="closeBudgetSettings()">ยกเลิก</button>
       <button class="btn-primary" onclick="saveBudgetSettings()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- Device Modal -->
+<div id="device-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--r);padding:24px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-size:15px;font-weight:700;color:var(--text)" id="dev-modal-title">Add Device</div>
+      <button onclick="closeDeviceModal()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:20px">&#x2715;</button>
+    </div>
+    <input type="hidden" id="dev-edit-id">
+    <div class="form-grid" style="margin-bottom:10px">
+      <div class="fg"><label>Device Name *</label><input type="text" id="dev-name" placeholder="เช่น iPhone 15 Pro"></div>
+      <div class="fg"><label>Type *</label><select id="dev-type"><option value="mobile">Mobile Phone</option><option value="laptop">Laptop</option><option value="tablet">Tablet</option><option value="other">Other</option></select></div>
+      <div class="fg"><label>Serial Number</label><input type="text" id="dev-serial" placeholder="S/N หรือ IMEI"></div>
+      <div class="fg"><label>Asset Tag</label><input type="text" id="dev-asset" placeholder="เช่น OD-001"></div>
+    </div>
+    <div class="form-grid" style="margin-bottom:10px">
+      <div class="fg"><label>ผู้ถือครอง</label><input type="text" id="dev-owner" placeholder="ชื่อ-นามสกุล"></div>
+      <div class="fg"><label>วันที่รับอุปกรณ์</label><input type="date" id="dev-assigned-date"></div>
+      <div class="fg"><label>โครงการ</label><select id="dev-project"><option value="">— ไม่ระบุ —</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option><option>Release 2.1</option><option>Release 3</option></select></div>
+      <div class="fg"><label>Return Date</label><input type="date" id="dev-return-date"></div>
+    </div>
+    <div class="form-grid" style="margin-bottom:10px">
+      <div class="fg"><label>Warranty Expiry</label><input type="date" id="dev-warranty"></div>
+      <div class="fg"><label>สภาพ (Condition)</label><select id="dev-condition"><option value="new">New</option><option value="good">Good</option><option value="fair">Fair</option><option value="poor">Poor</option></select></div>
+      <div class="fg"><label>สถานะ</label><select id="dev-status"><option value="in-use">In Use</option><option value="available">Available</option><option value="maintenance">Maintenance</option><option value="retired">Retired</option></select></div>
+      <div class="fg"><label>Link HW Memo</label><input type="text" id="dev-memo-ref" placeholder="เช่น ORB-2605-004"></div>
+    </div>
+    <div class="fg" style="margin-bottom:16px">
+      <label>หมายเหตุ</label>
+      <textarea id="dev-note" placeholder="รายละเอียดเพิ่มเติม..." style="min-height:52px"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeDeviceModal()">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveDevice()">บันทึก</button>
     </div>
   </div>
 </div>
