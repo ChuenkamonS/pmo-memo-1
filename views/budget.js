@@ -7,8 +7,8 @@ let bgtProjChart = null;
 let bgtTrendChart = null;
 
 const BGT_TYPE_NAMES = { sl:'Software License', hw:'Hardware', int:'Team Activity', ent:'Client Expense', dep:'Deployment' };
-const BGT_TYPE_COLORS = { sl:'#185FA5', hw:'#5F5E5A', int:'#3B6D11', ent:'#854F0B', dep:'#3C3489' };
-const BGT_PROJ_PALETTE = ['#185FA5','#3B6D11','#854F0B','#3C3489','#A32D2D','#0C447C','#97C459','#5F5E5A'];
+const BGT_TYPE_COLORS = { sl:'#4E79A7', hw:'#76B7B2', int:'#59A14F', ent:'#F28E2B', dep:'#B07AA1' };
+const BGT_PROJ_PALETTE = ['#4E79A7','#F28E2B','#59A14F','#E15759','#76B7B2','#EDC948','#B07AA1','#FF9DA7','#9C755F','#BAB0AC'];
 
 function memoDate(m){ return new Date(m.updatedAt||m.approvedAt||m.createdAt||0); }
 function memoStatusKey(m){
@@ -74,7 +74,40 @@ function renderBudgetTypeChart(rows){
       labels: rows.map(([k]) => BGT_TYPE_NAMES[k]||k.toUpperCase()),
       datasets: [{ data: rows.map(([,d])=>d.total), backgroundColor: rows.map(([k])=>BGT_TYPE_COLORS[k]||'#bbb'), borderWidth:2, borderColor:'#fff' }]
     },
-    options: { responsive:true, maintainAspectRatio:false, cutout:'58%', plugins:{legend:{position:'bottom', labels:{font:{size:11}}}} }
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'55%',
+      plugins:{
+        legend:{position:'bottom', labels:{font:{size:11}, padding:12}},
+        tooltip:{ callbacks:{ label: ctx => {
+          const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+          const pct = total ? Math.round(ctx.parsed/total*100) : 0;
+          return ` ${ctx.label}: ${money(ctx.parsed)} (${pct}%)`;
+        }}}
+      }
+    },
+    plugins:[{
+      id:'pct-labels-type',
+      afterDatasetDraw(chart){
+        const {ctx, data} = chart;
+        const total = data.datasets[0].data.reduce((a,b)=>a+b,0);
+        chart.getDatasetMeta(0).data.forEach((arc, i) => {
+          const val = data.datasets[0].data[i];
+          const pct = total ? Math.round(val/total*100) : 0;
+          if(pct < 8) return;
+          const angle = (arc.startAngle + arc.endAngle) / 2;
+          const r = (arc.outerRadius + arc.innerRadius) / 2;
+          const x = arc.x + Math.cos(angle) * r;
+          const y = arc.y + Math.sin(angle) * r;
+          ctx.save();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 12px IBM Plex Sans Thai, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`${pct}%`, x, y);
+          ctx.restore();
+        });
+      }
+    }]
   });
 }
 
@@ -98,9 +131,39 @@ function renderBudgetProjChart(rows){
       datasets: [{ data: rows.map(([,d])=>d.total), backgroundColor: colors, borderWidth:2, borderColor:'#fff' }]
     },
     options: {
-      responsive:true, maintainAspectRatio:false, cutout:'55%',
-      plugins:{ legend:{ display:false } }
-    }
+      responsive:true, maintainAspectRatio:false, cutout:'52%',
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label: ctx => {
+          const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+          const pct = total ? Math.round(ctx.parsed/total*100) : 0;
+          return ` ${ctx.label}: ${money(ctx.parsed)} (${pct}%)`;
+        }}}
+      }
+    },
+    plugins:[{
+      id:'pct-labels',
+      afterDatasetDraw(chart){
+        const {ctx, data} = chart;
+        const total = data.datasets[0].data.reduce((a,b)=>a+b,0);
+        chart.getDatasetMeta(0).data.forEach((arc, i) => {
+          const val = data.datasets[0].data[i];
+          const pct = total ? Math.round(val/total*100) : 0;
+          if(pct < 5) return; // skip tiny slices
+          const angle = (arc.startAngle + arc.endAngle) / 2;
+          const r = (arc.outerRadius + arc.innerRadius) / 2;
+          const x = arc.x + Math.cos(angle) * r;
+          const y = arc.y + Math.sin(angle) * r;
+          ctx.save();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 12px IBM Plex Sans Thai, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`${pct}%`, x, y);
+          ctx.restore();
+        });
+      }
+    }]
   });
 
   // Custom legend with % and amount
