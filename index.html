@@ -666,6 +666,7 @@ body {
 /* ── SVG ICONS ── */
 svg.icon { display: inline-block; vertical-align: middle; }
 </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -1139,6 +1140,11 @@ svg.icon { display: inline-block; vertical-align: middle; }
           <input id="bgt-min" type="number" placeholder="ขั้นต่ำ" oninput="renderBudget()">
           <input id="bgt-max" type="number" placeholder="สูงสุด" oninput="renderBudget()">
           <button class="btn-export" onclick="exportBudgetCsv()">Export CSV</button>
+          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="downloadTemplate('budget')" title="Download Template">⬇ Template</button>
+          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="importBulk('budget')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Import Excel
+          </button>
         </div>
 
         <div class="metric-row" style="grid-template-columns:repeat(4,1fr)">
@@ -1218,7 +1224,12 @@ svg.icon { display: inline-block; vertical-align: middle; }
             <option value="seats-desc">Seats มาก→น้อย</option>
             <option value="purchase-desc">ซื้อล่าสุด</option>
           </select>
-          <button class="btn-primary" style="margin-left:auto;font-size:12px;padding:6px 14px" onclick="openLicenseModal()">
+          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="downloadTemplate('license')" title="Download Template">⬇ Template</button>
+          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="importBulk('license')" title="Import from Excel">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Import Excel
+          </button>
+          <button class="btn-primary" style="font-size:12px;padding:6px 14px" onclick="openLicenseModal()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add License
           </button>
@@ -1302,6 +1313,11 @@ svg.icon { display: inline-block; vertical-align: middle; }
           <select id="dev-filter-status" onchange="renderDevice()"><option value="all">ทุกสถานะ</option><option value="in-use">In Use</option><option value="available">Available</option><option value="maintenance">Maintenance</option><option value="retired">Retired</option></select>
           <select id="dev-filter-project" onchange="renderDevice()"><option value="all">ทุกโครงการ</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option><option>Release 2.1</option><option>Release 3</option></select>
           <button class="btn-export" onclick="exportDeviceCsv()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export CSV</button>
+          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="downloadTemplate('device')" title="Download Template">⬇ Template</button>
+          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="importBulk('device')" title="Import from Excel">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Import Excel
+          </button>
           <button class="btn-primary" style="margin-left:auto" onclick="openDeviceModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Device</button>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
@@ -1330,6 +1346,7 @@ svg.icon { display: inline-block; vertical-align: middle; }
 <script src="views/budget.js"></script>
 <script src="views/license.js"></script>
 <script src="views/device.js"></script>
+<script src="views/bulk_import.js"></script>
 <script>initApp();</script>
 
 <!-- Approve Modal -->
@@ -1447,5 +1464,6 @@ svg.icon { display: inline-block; vertical-align: middle; }
 <style>
 .pend-tab-btn.active { background:var(--surface)!important;color:var(--blue)!important;font-weight:600!important;box-shadow:0 1px 3px rgba(0,0,0,0.08); }
 </style>
+<input type="file" id="bulk-import-input" accept=".xlsx,.xls" style="display:none" onchange="handleBulkImport(event)">
 </body>
 </html>
