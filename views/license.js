@@ -189,7 +189,8 @@ function renderLicense() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(lic => {
+  window._licFiltered = filtered;
+  tbody.innerHTML = filtered.map((lic, _idx) => {
     const s = getLicenseStatus(lic);
     const monthlyCostLic = (lic.pricePerMonth||0)*(lic.seats||1);
     const reminderBadge = s.days!==null && s.days<=30 && s.days>=0
@@ -209,8 +210,8 @@ function renderLicense() {
       <td style="font-size:11px">${esc(shortDate(lic.expiry))}${reminderBadge}</td>
       <td style="text-align:center"><span class="badge ${s.badge}">${esc(s.key==='renew-soon'?'Renew Soon':s.key==='expired'?'Expired':s.key==='cancelled'?'Cancelled':'Active')}</span></td>
       <td style="text-align:center;white-space:nowrap">
-        <button class="btn-sm" data-action="edit" data-lid="${esc(String(lic.id))}" style="padding:3px 7px;font-size:11px" title="Edit">✎</button>
-        ${lic.source!=='memo'?`<button class="btn-sm" data-action="delete" data-lid="${esc(String(lic.id))}" style="padding:3px 7px;font-size:11px;color:var(--red)" title="Delete">✕</button>`:''}
+        <button class="btn-sm" data-action="edit" data-idx="${_idx}" style="padding:3px 7px;font-size:11px" title="Edit">✎</button>
+        ${lic.source!=='memo'?`<button class="btn-sm" data-action="delete" data-idx="${_idx}" style="padding:3px 7px;font-size:11px;color:var(--red)" title="Delete">✕</button>`:''}
       </td>
     </tr>`;
   }).join('');
@@ -218,8 +219,11 @@ function renderLicense() {
   tbody.onclick = function(e) {
     const btn = e.target.closest('[data-action]');
     if(!btn) return;
-    if(btn.dataset.action==='edit')   openLicenseModal(btn.dataset.lid);
-    if(btn.dataset.action==='delete') deleteLicense(btn.dataset.lid);
+    const idx = Number(btn.dataset.idx);
+    const lic = window._licFiltered?.[idx];
+    if(!lic) return;
+    if(btn.dataset.action==='edit')   openLicenseModal(String(lic.id));
+    if(btn.dataset.action==='delete') deleteLicense(String(lic.id));
   };
 }
 
@@ -228,7 +232,7 @@ function openLicenseModal(id) {
   const modal = document.getElementById('license-modal');
   modal.style.display = 'flex';
   if(id) {
-    const lic = loadManualLicenses().find(l => String(l.id)===String(id));
+    const lic = getAllLicenses().find(l => String(l.id)===String(id));
     if(!lic) { closeLicenseModal(); return; }
     document.getElementById('lic-modal-title').textContent = 'Edit License';
     document.getElementById('lic-edit-id').value    = lic.id;
@@ -299,8 +303,9 @@ function saveLicenseManual() {
 }
 
 function deleteLicense(id) {
-  const lic = loadManualLicenses().find(l => String(l.id)===String(id));
+  const lic = getAllLicenses().find(l => String(l.id)===String(id));
   if(!lic) return;
+  if(lic.source === 'memo') { alert('ไม่สามารถลบ License ที่มาจาก Memo ได้'); return; }
   if(!confirm(`ลบ "${lic.name}" ออกจากระบบ?`)) return;
   storeManualLicenses(loadManualLicenses().filter(l => String(l.id)!==String(id)));
   renderLicense();
