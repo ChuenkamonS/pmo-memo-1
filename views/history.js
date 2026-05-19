@@ -427,17 +427,13 @@ function exportHistoryCsv() {
 }
 
 const HIST_ICON_VIEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-const HIST_ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 const HIST_ICON_PDF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
-const HIST_ICON_CSV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 
-function histActionButtons(memo, canDup) {
+function histActionButtons(memo) {
   const no = esc(memo.memoNo);
   return `<div class="hist-actions">
     <button type="button" class="btn-sm hist-act-btn" data-hist-action="detail" data-memo="${no}" title="ดูรายละเอียด">${HIST_ICON_VIEW}</button>
-    ${canDup ? `<button type="button" class="btn-sm hist-act-btn" data-hist-action="duplicate" data-memo="${no}" title="Duplicate">${HIST_ICON_COPY}</button>` : ''}
     <button type="button" class="btn-sm hist-act-btn" data-hist-action="pdf" data-memo="${no}" title="Download PDF">${HIST_ICON_PDF}</button>
-    <button type="button" class="btn-sm hist-act-btn" data-hist-action="export" data-memo="${no}" title="Export Row">${HIST_ICON_CSV}</button>
   </div>`;
 }
 
@@ -448,9 +444,10 @@ function handleHistoryTableClick(e) {
     const action = btn.dataset.histAction;
     const memoNo = btn.dataset.memo;
     if (action === 'detail') openHistoryDetail(memoNo);
-    else if (action === 'duplicate') duplicateMemoFromHistory(memoNo);
-    else if (action === 'pdf') openMemoPdf(memoNo);
-    else if (action === 'export') exportHistoryRowCsv(memoNo);
+    else if (action === 'pdf') {
+      if (typeof openMemoPdf === 'function') openMemoPdf(memoNo);
+      else alert('ระบบดาวน์โหลด PDF ยังไม่พร้อมใช้งาน');
+    }
     else if (action === 'reject-reason') showRejectionReason(memoNo, e);
     return;
   }
@@ -476,7 +473,6 @@ function renderHistoryMemos() {
   body.innerHTML = memos.map(memo => {
     const rej = memo.rejectionReason || '';
     const rejShort = rej ? truncateText(rej, 32) : '';
-    const canDup = ['completed', 'rejected', 'expired'].includes(memo.status);
     return `
     <tr class="hist-row" data-memo="${esc(memo.memoNo)}" title="คลิกเพื่อดูรายละเอียด">
       <td class="mono hist-memo-no" style="padding-left:16px">${esc(memo.memoNo)}</td>
@@ -490,7 +486,7 @@ function renderHistoryMemos() {
       <td class="hist-dt">${esc(shortDate(histActivityAt(memo)))}</td>
       <td class="hist-dt">${esc(formatApprovalDuration(memo))}</td>
       <td>${rej ? `<button type="button" class="hist-reject-btn" data-hist-action="reject-reason" data-memo="${esc(memo.memoNo)}" title="${esc(rej)}">${esc(rejShort)}</button>` : '<span style="color:var(--text-3)">—</span>'}</td>
-      <td style="text-align:center" onclick="event.stopPropagation()">${histActionButtons(memo, canDup)}</td>
+      <td style="text-align:center" onclick="event.stopPropagation()">${histActionButtons(memo)}</td>
     </tr>`;
   }).join('');
 
