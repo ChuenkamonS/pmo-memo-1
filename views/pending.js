@@ -10,13 +10,10 @@ function loadBudgets() {
   try { const b = JSON.parse(localStorage.getItem(BUDGET_KEY)||'null'); return b || {...DEFAULT_BUDGETS}; }
   catch(e) { return {...DEFAULT_BUDGETS}; }
 }
-function storeBudgets(b) {
-  try { localStorage.setItem(BUDGET_KEY, JSON.stringify(b)); } catch(e) {}
-}
+function storeBudgets(b) { try { localStorage.setItem(BUDGET_KEY, JSON.stringify(b)); } catch(e) {} }
 function getProjectBudget(project) { return loadBudgets()[project] || 0; }
 function getProjectUsed(project) {
-  return loadMemos()
-    .filter(m => m.project === project && m.status === 'completed')
+  return loadMemos().filter(m => m.project === project && m.status === 'completed')
     .reduce((s,m) => s+(Number(m.total)||0), 0);
 }
 
@@ -25,21 +22,23 @@ function pendingAge(iso) {
   if(!iso) return 0;
   return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
 }
-function amountThreshold(amount) {
-  if(amount >= 500000) return { cls:'badge-red',   label:'Critical' };
-  if(amount >= 100000) return { cls:'badge-amber',  label:'Warning'  };
-  return                      { cls:'badge-green',  label:'Normal'   };
-}
-function priorityBadge(p) {
-  return { urgent:{ cls:'badge-red', label:'Urgent' }, critical:{ cls:'badge-red', label:'Critical' } }[p]
-    || { cls:'badge-gray', label:'Normal' };
-}
 function currentUser() { return 'Chuen K.'; }
 function appendAuditLog(memos, memoNo, action, comment) {
   const idx = memos.findIndex(m => m.memoNo === memoNo);
   if(idx<0) return;
   if(!memos[idx].auditLog) memos[idx].auditLog = [];
   memos[idx].auditLog.push({ actor:currentUser(), action, comment:comment||'', timestamp:new Date().toISOString() });
+}
+function formatDateTime(iso) {
+  if(!iso) return '-';
+  const d = new Date(iso);
+  if(Number.isNaN(d.getTime())) return '-';
+  const day   = String(d.getDate()).padStart(2,'0');
+  const month = String(d.getMonth()+1).padStart(2,'0');
+  const yy    = String(d.getFullYear()+543).slice(-2);
+  const hh    = String(d.getHours()).padStart(2,'0');
+  const mm    = String(d.getMinutes()).padStart(2,'0');
+  return `${day}/${month}/${yy} · ${hh}:${mm}`;
 }
 
 // ── Tab state ──
@@ -65,8 +64,12 @@ function renderPendingMemos() {
   if(el('pending-latest')) el('pending-latest').textContent = pending[0]?.memoNo || '-';
   const badge = document.querySelector('#memo-sub .sb-badge');
   if(badge) badge.textContent = pending.length;
-  // Tab counts
-  const counts = { awaiting:pending.length, submitted:allMemos.filter(m=>['pending','completed','rejected'].includes(m.status)).length, rejected:allMemos.filter(m=>m.status==='rejected').length, drafts:allMemos.filter(m=>m.status==='draft').length };
+  const counts = {
+    awaiting:  pending.length,
+    submitted: allMemos.filter(m=>['pending','completed','rejected'].includes(m.status)).length,
+    rejected:  allMemos.filter(m=>m.status==='rejected').length,
+    drafts:    allMemos.filter(m=>m.status==='draft').length
+  };
   Object.entries(counts).forEach(([tab,count]) => {
     const el = document.querySelector(`.pend-tab-btn[data-tab="${tab}"] .tab-count`);
     if(el) el.textContent = count > 0 ? count : '';
@@ -86,19 +89,41 @@ function renderPendingContent() {
     const s = _pendingSearch.toLowerCase();
     memos = memos.filter(m => (m.memoNo||'').toLowerCase().includes(s)||(m.project||'').toLowerCase().includes(s)||(m.reviewerName||'').toLowerCase().includes(s));
   }
-  const typeF    = val('#pend-filter-type')    ||'all';
-  const projF    = val('#pend-filter-project') ||'all';
-  const prioF    = val('#pend-filter-priority')||'all';
+  const typeF = val('#pend-filter-type')    ||'all';
+  const projF = val('#pend-filter-project') ||'all';
   if(typeF!=='all') memos = memos.filter(m=>m.type===typeF);
   if(projF!=='all') memos = memos.filter(m=>m.project===projF);
-  if(prioF!=='all') memos = memos.filter(m=>(m.priority||'normal')===prioF);
   memos.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
 
   if(!memos.length) {
-    list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px"><h3>${_pendingTab==='awaiting'?'ไม่มี Memo ที่รออนุมัติ':'ไม่มีข้อมูล'}</h3><p>${_pendingTab==='awaiting'?'สร้าง Memo แล้วกด Save & Generate PDF':'ยังไม่มีรายการในหมวดนี้'}</p></div>`;
+    list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px">
+      <h3>${_pendingTab==='awaiting'?'ไม่มี Memo ที่รออนุมัติ':'ไม่มีข้อมูล'}</h3>
+      <p>${_pendingTab==='awaiting'?'สร้าง Memo แล้วกด Save & Generate PDF':'ยังไม่มีรายการในหมวดนี้'}</p>
+    </div>`;
     return;
   }
-  list.innerHTML = memos.map(m=>buildPendingCard(m)).join('');
+
+  // Build cards + bulk bar
+  const canActTab = _pendingTab === 'awaiting';
+  const bulkBar = canActTab ? `
+    <div id="bulk-bar" style="display:none;background:var(--surface);border:1px solid var(--border-md);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:10px;display:none;align-items:center;gap:10px;font-size:12px;color:var(--text-2)">
+      <input type="checkbox" id="bulk-select-all" onchange="bulkToggleAll(this)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--blue)">
+      <span id="bulk-count-label">เลือก 0 รายการ</span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn-primary" style="font-size:12px;padding:5px 14px" onclick="bulkApprove()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="bulk-approve-label">Approve All</span>
+        </button>
+        <button class="btn-reject" style="font-size:12px;padding:5px 14px" onclick="bulkReject()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <span id="bulk-reject-label">Reject All</span>
+        </button>
+      </div>
+    </div>` : '';
+
+  list.innerHTML = bulkBar + memos.map(m => buildPendingCard(m)).join('');
+
+  // Event delegation
   list.onclick = function(e) {
     const btn = e.target.closest('[data-action]');
     if(!btn) return;
@@ -106,125 +131,194 @@ function renderPendingContent() {
     if(btn.dataset.action==='approve') openApproveModal(no);
     else if(btn.dataset.action==='reject') openRejectModal(no);
     else if(btn.dataset.action==='detail') openDetailModal(no);
-    else if(btn.dataset.action==='toggle') toggleDesc(btn);
   };
 }
 
 function buildPendingCard(memo) {
   const days   = pendingAge(memo.createdAt);
   const amt    = Number(memo.total)||0;
-  const thresh = amountThreshold(amt);
-  const prio   = priorityBadge(memo.priority||'normal');
   const stage  = memo.approvalStage || 'Pending A1';
-  const budget = getProjectBudget(memo.project);
-  const used   = getProjectUsed(memo.project);
-  const usedPct  = budget ? Math.round(used/budget*100) : 0;
-  const afterPct = budget ? Math.round((used+amt)/budget*100) : 0;
   const isOwn  = memo.reviewerName === currentUser();
   const canAct = _pendingTab==='awaiting' && !isOwn;
+  const waitCls = days > 7 ? 'background:#FCEBEB;color:#791F1F' : days > 3 ? 'background:#FAEEDA;color:#633806' : 'background:#EAF3DE;color:#27500A';
+  const chain = (memo.approvalChain||[{ role:'A1', name:memo.approverName||memo.reviewerName||'—', done:false }])
+    .map((s,i,arr) => `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text-2)">${s.done?'✅':'⏳'} ${esc(s.role)}: ${esc(s.name)}</span>${i<arr.length-1?'<span style="color:var(--text-3);margin:0 4px">→</span>':''}`).join('');
+  const typeIcon = { sl:'SL', hw:'HW', int:'INT', ent:'ENT', dep:'DEP' }[memo.type] || '?';
+  const iconBg  = { sl:'background:#E6F1FB;color:#0C447C', hw:'background:#F1EFE8;color:#444441', int:'background:#EAF3DE;color:#27500A', ent:'background:#FAEEDA;color:#633806', dep:'background:#EEEDFE;color:#3C3489' }[memo.type] || 'background:#F1EFE8;color:#444441';
 
-  const chain = (memo.approvalChain||[{ role:'A1', name:memo.reviewerName||'—', done:false }])
-    .map((s,i,arr) => `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px">${s.done?'✅':'⏳'} <span style="color:var(--text-2)">${esc(s.role)}: ${esc(s.name)}</span></span>${i<arr.length-1?' <span style="color:var(--text-3)">→</span> ':''}`).join('');
+  return `<div class="pend-card" id="pcard-${esc(memo.memoNo)}" style="border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;transition:border-color .15s">
 
-  const budgetBar = budget ? `<div style="margin-top:8px;padding:8px 10px;background:var(--bg);border-radius:var(--r-sm);font-size:11px">
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-      <span style="color:var(--text-2)">Budget: <strong>${money(budget)}</strong></span>
-      <span style="color:${afterPct>100?'var(--red)':afterPct>85?'var(--amber)':'var(--text-2)'}">After approval: <strong>${afterPct}%</strong></span>
-    </div>
-    <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(usedPct,100)}%;background:var(--blue);border-radius:3px"></div></div>
-    <div style="display:flex;justify-content:space-between;margin-top:3px;color:var(--text-3)">
-      <span>Used: ${money(used)} (${usedPct}%)</span>
-      <span style="color:${afterPct>100?'var(--red)':'var(--text-3)'}">+${money(amt)} → ${money(used+amt)}</span>
-    </div></div>` : '';
-
-  return `<div class="pend-card">
-    <div class="pend-top">
+    <!-- Zone 1: Header -->
+    <div style="padding:12px 14px;display:flex;align-items:flex-start;gap:10px">
+      ${canAct ? `<input type="checkbox" class="pend-checkbox" data-memo="${esc(memo.memoNo)}" onchange="onCardCheck(this)" style="width:16px;height:16px;margin-top:2px;cursor:pointer;accent-color:var(--blue);flex-shrink:0">` : '<div style="width:16px;flex-shrink:0"></div>'}
+      <div style="width:34px;height:34px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:600;${iconBg}">${typeIcon}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-          <div class="pend-title">${esc(memo.memoNo)} — ${esc(memo.typeLabel||'-')}</div>
-          <span class="badge ${thresh.cls}">${thresh.label}</span>
-          ${memo.priority&&memo.priority!=='normal'?`<span class="badge ${prio.cls}">${prio.label}</span>`:''}
+          <span style="font-size:13px;font-weight:600;color:var(--text)">${esc(memo.memoNo)}</span>
           <span class="badge badge-purple" style="font-size:9px">${esc(stage)}</span>
         </div>
-        <div class="pend-meta">
-          <span class="badge ${badgeClass(memo.type)}">${esc(String(memo.type||'').toUpperCase())}</span>
-          ${esc(memo.project||'-')} &middot; ${esc(memo.reviewerName||'-')} &middot;
-          Submitted: ${esc(shortDate(memo.createdAt))} &middot;
-          <span style="color:${days>7?'var(--red)':days>3?'var(--amber)':'var(--text-3)'}">รอ ${days} วัน</span>
-          ${memo.attachments?.length?`&middot; 📎 ${memo.attachments.length}`:''}
+        <div style="font-size:11px;color:var(--text-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:3px">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            ${esc(formatDateTime(memo.createdAt))}
+          </span>
         </div>
       </div>
-      <div class="pend-amount">${esc(money(amt))}</div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:15px;font-weight:600;color:var(--text)">${esc(money(amt))}</div>
+      </div>
     </div>
-    <div class="pend-detail desc-text" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(memo.subject||'-')} &middot; ${esc(memo.reason||'-')}</div>
-    <button data-action="toggle" data-memo="${esc(memo.memoNo)}" class="btn-sm" style="padding:2px 8px;font-size:10px;margin:2px 0 6px">ดูเพิ่มเติม ▾</button>
-    <div style="font-size:11px;margin-bottom:4px">${chain}</div>
-    ${budgetBar}
-    ${isOwn&&_pendingTab==='awaiting'?'<div style="font-size:11px;color:var(--amber);margin-top:6px">⚠ ไม่สามารถอนุมัติ Memo ของตัวเองได้</div>':''}
-    <div class="pend-actions" style="margin-top:10px">
-      ${canAct?`<button class="btn-approve" data-action="approve" data-memo="${esc(memo.memoNo)}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Approve</button>
-      <button class="btn-reject" data-action="reject" data-memo="${esc(memo.memoNo)}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Reject</button>`:''}
-      <button class="btn-sm" data-action="detail" data-memo="${esc(memo.memoNo)}">👁 View Details</button>
-      ${memo.status==='rejected'?`<span class="badge badge-red" style="align-self:center">Rejected: ${esc(memo.rejectionReason||'-')}</span>`:''}
+
+    <!-- Divider -->
+    <div style="height:0.5px;background:var(--border);margin:0 14px"></div>
+
+    <!-- Zone 2: Info grid -->
+    <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+      <div>
+        <div style="font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">โครงการ</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(memo.project||'-')}</div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">ประเภท</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(memo.typeLabel||'-')}</div>
+        <div style="font-size:10px;color:var(--text-2)">${esc(memo.subject||'-').slice(0,28)}</div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">ผู้ขอ</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(memo.reviewerName||'-')}</div>
+        <div style="font-size:10px;color:var(--text-2)">${esc(memo.reviewerTitle||'-')}</div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Reviewer (A1)</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(memo.reviewerName||'-')}</div>
+        <div style="font-size:10px;color:var(--text-2)">${esc(memo.reviewerTitle||'-')}</div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Approver (A2)</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(memo.approverName||'—')}</div>
+        <div style="font-size:10px;color:var(--text-2)">${esc(memo.approverTitle||'-')}</div>
+      </div>
     </div>
+
+    <!-- Divider -->
+    <div style="height:0.5px;background:var(--border)"></div>
+
+    <!-- Zone 3: Actions bar -->
+    <div style="padding:10px 14px;display:flex;align-items:center;gap:6px">
+      <div style="flex:1;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${chain}</div>
+      <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;${waitCls}">รอ ${days} วัน</span>
+      ${canAct ? `
+        <button class="btn-approve" data-action="approve" data-memo="${esc(memo.memoNo)}" style="font-size:12px;padding:5px 12px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Approve
+        </button>
+        <button class="btn-reject" data-action="reject" data-memo="${esc(memo.memoNo)}" style="font-size:12px;padding:5px 12px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Reject
+        </button>` : ''}
+      <button class="btn-sm" data-action="detail" data-memo="${esc(memo.memoNo)}" style="font-size:12px;padding:5px 10px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Details
+      </button>
+      ${memo.status==='rejected'?`<span class="badge badge-red">Rejected: ${esc(memo.rejectionReason||'-')}</span>`:''}
+    </div>
+    ${isOwn&&_pendingTab==='awaiting'?`<div style="padding:6px 14px 10px;font-size:11px;color:var(--amber)">⚠ ไม่สามารถอนุมัติ Memo ของตัวเองได้</div>`:''}
   </div>`;
 }
 
-function toggleDesc(btn) {
-  const desc = btn.closest('.pend-card').querySelector('.desc-text');
-  const collapsed = desc.style.webkitLineClamp !== 'unset';
-  desc.style.webkitLineClamp = collapsed ? 'unset' : '2';
-  desc.style.overflow = collapsed ? 'visible' : 'hidden';
-  btn.textContent = collapsed ? 'ย่อ ▴' : 'ดูเพิ่มเติม ▾';
+// ── Checkbox / Bulk ──
+function onCardCheck(cb) {
+  const card = document.getElementById('pcard-' + cb.dataset.memo);
+  if(card) card.style.borderColor = cb.checked ? 'var(--blue)' : 'var(--border)';
+  updateBulkBar();
+}
+function bulkToggleAll(cb) {
+  document.querySelectorAll('.pend-checkbox').forEach(c => {
+    c.checked = cb.checked;
+    const card = document.getElementById('pcard-' + c.dataset.memo);
+    if(card) card.style.borderColor = cb.checked ? 'var(--blue)' : 'var(--border)';
+  });
+  updateBulkBar();
+}
+function updateBulkBar() {
+  const checked = [...document.querySelectorAll('.pend-checkbox:checked')];
+  const bar = document.getElementById('bulk-bar');
+  if(!bar) return;
+  bar.style.display = checked.length > 0 ? 'flex' : 'none';
+  document.getElementById('bulk-count-label').textContent = `เลือก ${checked.length} รายการ`;
+  document.getElementById('bulk-approve-label').textContent = `Approve (${checked.length})`;
+  document.getElementById('bulk-reject-label').textContent  = `Reject (${checked.length})`;
+}
+function getCheckedMemos() {
+  return [...document.querySelectorAll('.pend-checkbox:checked')].map(c => c.dataset.memo);
+}
+function bulkApprove() {
+  const nos = getCheckedMemos();
+  if(!nos.length) return;
+  openApproveModal(null, nos);
+}
+function bulkReject() {
+  const nos = getCheckedMemos();
+  if(!nos.length) return;
+  openRejectModal(null, nos);
 }
 
 // ── Approve Modal ──
-function openApproveModal(memoNo) {
-  const memo = loadMemos().find(m=>m.memoNo===memoNo);
-  if(!memo) return;
-  document.getElementById('approve-memo-no').textContent  = memo.memoNo;
-  document.getElementById('approve-project').textContent  = memo.project||'-';
-  document.getElementById('approve-amount').textContent   = money(Number(memo.total)||0);
-  document.getElementById('approve-subject').textContent  = memo.subject||'-';
-  document.getElementById('approve-note').value           = '';
-  document.getElementById('approve-modal').dataset.memo   = memoNo;
-  document.getElementById('approve-modal').style.display  = 'flex';
+function openApproveModal(memoNo, bulk) {
+  const isBulk = Array.isArray(bulk) && bulk.length > 0;
+  const targets = isBulk ? bulk : [memoNo];
+  const memo = !isBulk ? loadMemos().find(m=>m.memoNo===memoNo) : null;
+  const el = id => document.getElementById(id);
+  if(isBulk) {
+    el('approve-memo-no').textContent  = `${bulk.length} รายการ (${bulk.join(', ')})`;
+    el('approve-project').textContent  = '—';
+    el('approve-amount').textContent   = '—';
+    el('approve-subject').textContent  = '—';
+  } else {
+    el('approve-memo-no').textContent  = memo?.memoNo || memoNo;
+    el('approve-project').textContent  = memo?.project || '-';
+    el('approve-amount').textContent   = money(Number(memo?.total)||0);
+    el('approve-subject').textContent  = memo?.subject || '-';
+  }
+  el('approve-note').value = '';
+  el('approve-modal').dataset.targets = JSON.stringify(targets);
+  el('approve-modal').style.display   = 'flex';
 }
 function closeApproveModal() { document.getElementById('approve-modal').style.display='none'; }
 function confirmApprove() {
-  const memoNo = document.getElementById('approve-modal').dataset.memo;
-  const note   = document.getElementById('approve-note').value.trim();
-  const memos  = loadMemos();
-  appendAuditLog(memos, memoNo, 'approved', note);
+  const targets = JSON.parse(document.getElementById('approve-modal').dataset.targets || '[]');
+  const note    = document.getElementById('approve-note').value.trim();
+  const memos   = loadMemos();
+  targets.forEach(memoNo => {
+    appendAuditLog(memos, memoNo, 'approved', note);
+  });
   storeMemos(memos);
-  updateMemoStatus(memoNo, 'completed', { approvalNote:note, approvedBy:currentUser() });
+  targets.forEach(memoNo => updateMemoStatus(memoNo, 'completed', { approvalNote:note, approvedBy:currentUser() }));
   closeApproveModal();
-  alert(`✓ ${memoNo} Approved แล้ว`);
+  alert(`✓ Approved ${targets.length} รายการแล้ว`);
 }
 
 // ── Reject Modal ──
-function openRejectModal(memoNo) {
-  const memo = loadMemos().find(m=>m.memoNo===memoNo);
-  if(!memo) return;
-  document.getElementById('reject-memo-no').textContent = memo.memoNo;
-  document.getElementById('reject-reason-select').value = '';
-  document.getElementById('reject-comment').value = '';
-  document.getElementById('reject-modal').dataset.memo  = memoNo;
-  document.getElementById('reject-modal').style.display = 'flex';
+function openRejectModal(memoNo, bulk) {
+  const isBulk = Array.isArray(bulk) && bulk.length > 0;
+  const targets = isBulk ? bulk : [memoNo];
+  const memo = !isBulk ? loadMemos().find(m=>m.memoNo===memoNo) : null;
+  document.getElementById('reject-memo-no').textContent  = isBulk ? `${bulk.length} รายการ` : (memo?.memoNo || memoNo);
+  document.getElementById('reject-reason-select').value  = '';
+  document.getElementById('reject-comment').value        = '';
+  document.getElementById('reject-modal').dataset.targets = JSON.stringify(targets);
+  document.getElementById('reject-modal').style.display  = 'flex';
 }
 function closeRejectModal() { document.getElementById('reject-modal').style.display='none'; }
 function confirmReject() {
-  const memoNo  = document.getElementById('reject-modal').dataset.memo;
+  const targets = JSON.parse(document.getElementById('reject-modal').dataset.targets || '[]');
   const reason  = document.getElementById('reject-reason-select').value;
   const comment = document.getElementById('reject-comment').value.trim();
   if(!reason) { alert('กรุณาเลือกเหตุผลการ Reject'); return; }
-  const full = reason==='Other' ? (comment||'Other') : (comment?`${reason}: ${comment}`:reason);
+  const full  = reason==='Other' ? (comment||'Other') : (comment?`${reason}: ${comment}`:reason);
   const memos = loadMemos();
-  appendAuditLog(memos, memoNo, 'rejected', full);
+  targets.forEach(memoNo => appendAuditLog(memos, memoNo, 'rejected', full));
   storeMemos(memos);
-  updateMemoStatus(memoNo, 'rejected', { rejectionReason:full, rejectedBy:currentUser() });
+  targets.forEach(memoNo => updateMemoStatus(memoNo, 'rejected', { rejectionReason:full, rejectedBy:currentUser() }));
   closeRejectModal();
-  alert(`${memoNo} Rejected แล้ว`);
+  alert(`Rejected ${targets.length} รายการแล้ว`);
 }
 
 // ── Detail Modal ──
@@ -233,7 +327,7 @@ function openDetailModal(memoNo) {
   if(!memo) return;
   const auditLog = (memo.auditLog||[]).map(e=>`<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)"><div style="font-size:11px;color:var(--text-3);white-space:nowrap">${esc(shortDate(e.timestamp))}</div><div style="font-size:11px;color:var(--text-2)"><strong>${esc(e.actor)}</strong> — ${esc(e.action)}${e.comment?`<br><span style="color:var(--text-3)">${esc(e.comment)}</span>`:''}</div></div>`).join('')||'<div style="font-size:11px;color:var(--text-3);padding:8px 0">ยังไม่มีประวัติ</div>';
   const sections = (memo.sections||[]).map(s=>`<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px">${esc(s.title)}</div>${s.html}</div>`).join('');
-  const isOwn = memo.reviewerName===currentUser();
+  const isOwn  = memo.reviewerName===currentUser();
   const canAct = (!memo.status||memo.status==='pending') && !isOwn;
   document.getElementById('detail-content').innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
