@@ -1,7 +1,6 @@
 // ─────────────────────────────────────────
 // views/history.js — history table, filter, CSV
 // ─────────────────────────────────────────
-
 function statusLabel(status) { return status==='completed'?'Completed':status==='rejected'?'Rejected':status; }
 function statusBadgeClass(status) { return status==='completed'?'badge-green':status==='rejected'?'badge-red':'badge-gray'; }
 function inHistoryRange(memo, range) {
@@ -37,7 +36,7 @@ function renderHistoryMemos() {
   if(!body) return;
   const memos = filteredHistoryMemos();
   if(!memos.length) {
-    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:34px 16px;color:var(--text-3)">ยังไม่มี Memo ใน History ตามเงื่อนไขที่เลือก</td></tr>`;
+    body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:34px 16px;color:var(--text-3)">ยังไม่มี Memo ใน History ตามเงื่อนไขที่เลือก</td></tr>`;
     return;
   }
   body.innerHTML = memos.map(memo => `
@@ -48,6 +47,9 @@ function renderHistoryMemos() {
       <td class="mono">${esc(money(memo.total||0))}</td>
       <td>${esc(shortDate(memo.updatedAt||memo.createdAt))}</td>
       <td><span class="badge ${statusBadgeClass(memo.status)}">${esc(statusLabel(memo.status))}</span></td>
+      <td style="font-size:11px;color:var(--text-2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(memo.rejectionReason||'')}">
+        ${memo.rejectionReason ? esc(memo.rejectionReason) : '<span style="color:var(--text-3)">—</span>'}
+      </td>
       <td style="text-align:center"><button class="btn-sm" data-action="pdf" data-memo="${esc(memo.memoNo)}" style="padding:3px 8px;margin:0 auto">&#128196;</button></td>
     </tr>`).join('');
   const tbl = body.closest('table');
