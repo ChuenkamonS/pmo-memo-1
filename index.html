@@ -1130,97 +1130,46 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ BUDGET ════ -->
       <div id="view-budget" class="view">
-        <!-- Filter row -->
         <div class="filter-row">
-          <select id="bgt-range" onchange="renderBudget()">
-            <option value="month">เดือนนี้</option>
-            <option value="last-month">เดือนที่แล้ว</option>
-            <option value="3-months">3 เดือน</option>
-            <option value="all">ทั้งหมด</option>
-          </select>
-          <select id="bgt-project" onchange="renderBudget()">
-            <option value="all">ทุกโครงการ</option>
-            <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
-            <option>Release 2.1</option><option>Release 3</option>
-          </select>
-          <button class="btn-export" onclick="exportBudgetCsv()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export CSV
-          </button>
+          <select id="bgt-range" onchange="renderBudget()"><option value="month">เดือนนี้</option><option value="last-month">เดือนที่แล้ว</option><option value="3-months">3 เดือน</option><option value="all">ทั้งหมด</option></select>
+          <select id="bgt-project" onchange="renderBudget()"><option value="all">ทุกโครงการ</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option><option>Release 2.1</option><option>Release 3</option></select>
+          <input id="bgt-search" type="search" placeholder="ค้นหา memo/project/requester" oninput="renderBudget()">
+          <select id="bgt-filter-type" onchange="renderBudget()"><option value="all">ทุกประเภท</option><option value="sl">SL</option><option value="hw">HW</option><option value="int">INT</option><option value="ent">ENT</option><option value="dep">DEP</option></select>
+          <select id="bgt-filter-status" onchange="renderBudget()"><option value="all">ทุกสถานะ</option><option value="completed">completed</option><option value="pending">pending</option><option value="rejected">rejected</option><option value="cancelled">cancelled</option></select>
+          <input id="bgt-min" type="number" placeholder="ขั้นต่ำ" oninput="renderBudget()">
+          <input id="bgt-max" type="number" placeholder="สูงสุด" oninput="renderBudget()">
+          <button class="btn-export" onclick="exportBudgetCsv()">Export CSV</button>
         </div>
 
-        <!-- Metric cards -->
         <div class="metric-row" style="grid-template-columns:repeat(4,1fr)">
-          <div class="metric-card">
-            <div class="metric-label">ยอดรวม (Completed)</div>
-            <div class="metric-val" id="bgt-total" style="font-size:20px">฿0</div>
-            <div class="metric-sub" id="bgt-total-count">0 รายการ</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">รอ Approve (Pending)</div>
-            <div class="metric-val" id="bgt-pending-total" style="font-size:20px;color:var(--amber)">฿0</div>
-            <div class="metric-sub" id="bgt-pending-count">0 รายการ</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">ประเภทที่ใช้มากสุด</div>
-            <div class="metric-val" id="bgt-top-type" style="font-size:16px;margin-top:4px">—</div>
-            <div class="metric-sub" id="bgt-top-type-amt"></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">โครงการที่ใช้มากสุด</div>
-            <div class="metric-val" id="bgt-top-proj" style="font-size:16px;margin-top:4px">—</div>
-            <div class="metric-sub" id="bgt-top-proj-amt"></div>
-          </div>
+          <div class="metric-card"><div class="metric-label">Approved Spend</div><div class="metric-val" id="bgt-total">฿0</div><div class="metric-sub" id="bgt-total-count">0 รายการ</div></div>
+          <div class="metric-card"><div class="metric-label">Pending Spend</div><div class="metric-val" id="bgt-pending-total" style="color:var(--amber)">฿0</div><div class="metric-sub" id="bgt-pending-count">0 รายการ</div></div>
+          <div class="metric-card"><div class="metric-label">Forecast Total</div><div class="metric-val" id="bgt-forecast-total">฿0</div><div class="metric-sub">Approved + Pending</div></div>
+          <div class="metric-card"><div class="metric-label">Budget Utilization</div><div class="metric-val" id="bgt-util">0%</div><div class="metric-sub" id="bgt-near-limit">0 Projects > 80%</div></div>
         </div>
 
-        <!-- Two-col: by type + by project -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-          <div class="card">
-            <div class="card-head" style="margin-bottom:10px;padding-bottom:10px">
-              <span class="card-title">แยกตามประเภท</span>
-            </div>
-            <table class="hist-table" id="bgt-type-table">
-              <thead><tr>
-                <th style="width:30%">ประเภท</th>
-                <th style="width:15%">จำนวน</th>
-                <th style="width:30%">ยอดรวม</th>
-                <th style="width:25%">สัดส่วน</th>
-              </tr></thead>
-              <tbody id="bgt-type-body"></tbody>
-            </table>
-          </div>
-          <div class="card">
-            <div class="card-head" style="margin-bottom:10px;padding-bottom:10px">
-              <span class="card-title">แยกตามโครงการ</span>
-            </div>
-            <table class="hist-table" id="bgt-proj-table">
-              <thead><tr>
-                <th style="width:35%">โครงการ</th>
-                <th style="width:15%">จำนวน</th>
-                <th style="width:30%">ยอดรวม</th>
-                <th style="width:20%">สัดส่วน</th>
-              </tr></thead>
-              <tbody id="bgt-proj-body"></tbody>
-            </table>
-          </div>
+        <div class="metric-row" style="grid-template-columns:repeat(2,1fr)">
+          <div class="metric-card"><div class="metric-label">Highest Growth Project</div><div class="metric-val" id="bgt-growth">—</div></div>
+          <div class="metric-card"><div class="metric-label">Average Monthly Spend</div><div class="metric-val" id="bgt-avg">฿0</div></div>
         </div>
 
-        <!-- All completed memos table -->
+        <div class="card"><div class="card-title" style="margin-bottom:8px">Budget Alerts</div><div id="bgt-alerts"></div></div>
+
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="card"><div class="card-title">Monthly Trend (12 เดือน)</div><div style="height:280px"><canvas id="bgt-trend-chart"></canvas></div></div>
+          <div class="card"><div class="card-title">Spend by Type</div><div style="height:280px"><canvas id="bgt-type-chart"></canvas></div></div>
+        </div>
+
+        <div class="card"><div class="card-title" style="margin-bottom:10px">Spend by Project (Top 5)</div><div style="height:260px"><canvas id="bgt-proj-chart"></canvas></div></div>
+
         <div class="card" style="padding:0;overflow:hidden">
-          <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0">
-            <span class="card-title">รายการ Memo ทั้งหมด</span>
-          </div>
-          <table class="hist-table">
-            <thead><tr>
-              <th style="width:22%;padding-left:16px">เลข Memo</th>
-              <th style="width:10%">Type</th>
-              <th style="width:20%">โครงการ</th>
-              <th style="width:16%">วงเงิน</th>
-              <th style="width:14%">วันที่</th>
-              <th style="width:18%">สถานะ</th>
-            </tr></thead>
-            <tbody id="bgt-memo-body"></tbody>
-          </table>
+          <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0"><span class="card-title">Project Financial Summary</span></div>
+          <table class="hist-table"><thead><tr><th>Project</th><th>Budget</th><th>Approved</th><th>Pending</th><th>Remaining</th><th>Utilization</th><th>Status</th></tr></thead><tbody id="bgt-summary-body"></tbody></table>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0"><span class="card-title">Memo Drilldown</span></div>
+          <table class="hist-table"><thead><tr><th style="padding-left:16px">Memo</th><th>Type</th><th>Project</th><th>Requester</th><th>Approver</th><th>Approval Date</th><th>Amount</th><th>Status</th><th>Detail</th><th>PDF</th></tr></thead><tbody id="bgt-memo-body"></tbody></table>
         </div>
       </div>
 
