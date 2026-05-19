@@ -18,7 +18,8 @@ function getProjectUsed(project) {
 }
 
 // ── Helpers ──
-function pendingAge(iso) {
+function pendingAge(memo) {
+  const iso = memo.submittedAt || memo.createdAt;
   if(!iso) return 0;
   return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
 }
@@ -93,13 +94,24 @@ function renderPendingContent() {
   const projF = val('#pend-filter-project') ||'all';
   if(typeF!=='all') memos = memos.filter(m=>m.type===typeF);
   if(projF!=='all') memos = memos.filter(m=>m.project===projF);
-  memos.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  // Sort
+  const sortF = val('#pend-sort') || 'date-desc';
+  memos.sort((a,b) => {
+    if(sortF==='amount-desc') return (Number(b.total)||0)-(Number(a.total)||0);
+    if(sortF==='amount-asc')  return (Number(a.total)||0)-(Number(b.total)||0);
+    if(sortF==='wait-desc')   return pendingAge(b)-pendingAge(a);
+    return new Date(b.createdAt||0)-new Date(a.createdAt||0); // date-desc default
+  });
 
   if(!memos.length) {
-    list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px">
-      <h3>${_pendingTab==='awaiting'?'ไม่มี Memo ที่รออนุมัติ':'ไม่มีข้อมูล'}</h3>
-      <p>${_pendingTab==='awaiting'?'สร้าง Memo แล้วกด Save & Generate PDF':'ยังไม่มีรายการในหมวดนี้'}</p>
-    </div>`;
+    const emptyStates = {
+      awaiting:  { h:'ไม่มี Memo ที่รออนุมัติ',     p:'สร้าง Memo แล้วกด Save & Generate PDF เพื่อให้รายการมาแสดงที่นี่' },
+      submitted: { h:'ยังไม่มี Memo ที่เคยส่ง',       p:'Memo ที่สร้างและส่งทั้งหมดจะแสดงที่นี่' },
+      rejected:  { h:'ไม่มี Memo ที่ถูกปฏิเสธ',      p:'Memo ที่ถูก Reject จะแสดงที่นี่เพื่อแก้ไขและส่งใหม่' },
+      drafts:    { h:'ยังไม่มี Draft',                p:'Draft ที่บันทึกไว้จะแสดงที่นี่' },
+    };
+    const es = emptyStates[_pendingTab] || { h:'ไม่มีข้อมูล', p:'ยังไม่มีรายการ' };
+    list.innerHTML = `<div class="placeholder" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:38px 20px"><h3>${es.h}</h3><p>${es.p}</p></div>`;
     return;
   }
 
@@ -135,10 +147,10 @@ function renderPendingContent() {
 }
 
 function buildPendingCard(memo) {
-  const days   = pendingAge(memo.createdAt);
+  const days   = pendingAge(memo);
   const amt    = Number(memo.total)||0;
   const stage  = memo.approvalStage || 'Pending A1';
-  const isOwn  = memo.reviewerName === currentUser();
+  const isOwn  = (memo.requesterName || memo.reviewerName) === currentUser();
   const canAct = _pendingTab==='awaiting' && !isOwn;
   const waitCls = days > 7 ? 'background:#FCEBEB;color:#791F1F' : days > 3 ? 'background:#FAEEDA;color:#633806' : 'background:#EAF3DE;color:#27500A';
   const chain = (memo.approvalChain||[{ role:'A1', name:memo.approverName||memo.reviewerName||'—', done:false }])
@@ -185,8 +197,8 @@ function buildPendingCard(memo) {
       </div>
       <div>
         <div style="font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">ผู้ขอ</div>
-        <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(memo.reviewerName||'-')}</div>
-        <div style="font-size:10px;color:var(--text-2)">${esc(memo.reviewerTitle||'-')}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(memo.requesterName||memo.reviewerName||'-')}</div>
+        <div style="font-size:10px;color:var(--text-2)">${esc(memo.requesterTitle||'PMO')}</div>
       </div>
       <div>
         <div style="font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Reviewer (A1)</div>
@@ -344,7 +356,7 @@ function openDetailModal(memoNo) {
     <div style="margin-bottom:10px"><div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;margin-bottom:4px">เหตุผล</div><div style="font-size:13px">${esc(memo.reason||'-')}</div></div>
     <div style="margin-bottom:14px">${sections}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;background:var(--bg);border-radius:var(--r-sm);margin-bottom:14px">
-      <div><div style="font-size:10px;color:var(--text-3);font-weight:600;margin-bottom:2px">REVIEWER</div><div style="font-weight:600">${esc(memo.reviewerName||'-')}</div><div style="font-size:11px;color:var(--text-3)">${esc(memo.reviewerTitle||'-')}</div></div>
+      <div><div style="font-size:10px;color:var(--text-3);font-weight:600;margin-bottom:2px">ผู้ขอ</div><div style="font-weight:600">${esc(memo.requesterName||memo.reviewerName||'-')}</div><div style="font-size:11px;color:var(--text-3)">${esc(memo.requesterTitle||'PMO')}</div></div>
       <div><div style="font-size:10px;color:var(--text-3);font-weight:600;margin-bottom:2px">APPROVER</div><div style="font-weight:600">${esc(memo.approverName||'-')}</div><div style="font-size:11px;color:var(--text-3)">${esc(memo.approverTitle||'-')}</div></div>
     </div>
     ${memo.approvalNote?`<div style="padding:10px;background:var(--green-50);border-radius:var(--r-sm);margin-bottom:10px;font-size:12px"><strong>Approval Note:</strong> ${esc(memo.approvalNote)}</div>`:''}
