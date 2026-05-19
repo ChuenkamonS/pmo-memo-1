@@ -3,10 +3,13 @@
 // ─────────────────────────────────────────
 
 let bgtTypeChart = null;
+let bgtProjChart = null;
 let bgtTrendChart = null;
 
 const BGT_TYPE_NAMES = { sl:'Software License', hw:'Hardware', int:'Team Activity', ent:'Client Expense', dep:'Deployment' };
 const BGT_TYPE_COLORS = { sl:'#185FA5', hw:'#5F5E5A', int:'#3B6D11', ent:'#854F0B', dep:'#3C3489' };
+const BGT_PROJ_PALETTE = ['#185FA5','#3B6D11','#854F0B','#3C3489','#A32D2D','#0C447C','#97C459','#5F5E5A'];
+let _bgtDrill = { project: 'all', type: 'all', status: 'all', q: '' };
 
 function memoDate(m){ return new Date(m.updatedAt||m.approvedAt||m.createdAt||0); }
 function memoStatusKey(m){
@@ -40,11 +43,7 @@ function getBudgetMemos(range, project) {
 
 function renderBudgetTrend(allMemos){
   const canvas = document.getElementById('bgt-trend-chart');
-  if (!canvas) return;
-  if (typeof Chart === 'undefined') {
-    const wrap = canvas.parentElement; if (wrap) wrap.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:12px">ไม่สามารถแสดงกราฟได้ (Chart library ไม่พร้อม)</div>';
-    return;
-  }
+  if (!canvas || typeof Chart === 'undefined') return;
   if (bgtTrendChart) bgtTrendChart.destroy();
   const labels=[]; const data=[];
   const now = new Date();
@@ -64,16 +63,8 @@ function renderBudgetTrend(allMemos){
 
 function renderBudgetPieChart(canvasId, chartRef, rows, labelFn, colorFn, onClick){
   const canvas = document.getElementById(canvasId);
-  if(!canvas) return null;
-  if(typeof Chart === 'undefined') {
-    const wrap = canvas.parentElement; if (wrap) wrap.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:12px">ไม่สามารถแสดงกราฟได้ (Chart library ไม่พร้อม)</div>';
-    return null;
-  }
+  if(!canvas || typeof Chart === 'undefined') return null;
   if(chartRef) { chartRef.destroy(); chartRef = null; }
-  if (!rows.length) {
-    const wrap = canvas.parentElement; if (wrap) wrap.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:12px">ยังไม่มีข้อมูลสำหรับกราฟ</div>';
-    return null;
-  }
   const labels = rows.map(([key]) => labelFn(key));
   const data = rows.map(([, d]) => d.total);
   const colors = rows.map(([key], i) => colorFn(key, i));
@@ -108,7 +99,7 @@ function renderBudget() {
   document.getElementById('bgt-util').textContent = `${utilPct}% Utilized`;
 
   const allProjects = [...new Set(all.map(m=>m.project||'ไม่ระบุ'))];
-  let near=0;
+  let near=0, growthProj='—', growthVal=0;
   const projRows=[];
   allProjects.forEach(p=>{
     const projMemos = all.filter(m=>(m.project||'ไม่ระบุ')===p);
@@ -123,10 +114,26 @@ function renderBudget() {
   });
   document.getElementById('bgt-near-limit').textContent = `${near} Projects > 80%`;
 
+  const now = new Date();
+  const curM = new Date(now.getFullYear(), now.getMonth(), 1);
+  const preM = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  allProjects.forEach(p=>{
+    const cur = all.filter(m=>(m.project||'ไม่ระบุ')===p && memoStatusKey(m)==='completed' && memoDate(m)>=curM)
+      .reduce((s,m)=>s+(Number(m.total)||0),0);
+    const pre = all.filter(m=>{ const d=memoDate(m); return (m.project||'ไม่ระบุ')===p && memoStatusKey(m)==='completed' && d>=preM && d<curM; }).reduce((s,m)=>s+(Number(m.total)||0),0);
+    const g = cur-pre; if(g>growthVal){ growthVal=g; growthProj=p; }
+  });
+  document.getElementById('bgt-growth').textContent = growthProj;
+  document.getElementById('bgt-avg').textContent = money(Math.round(approvedAmt / 12));
+
   const byType = {};
   approved.forEach(m=>{ if(!byType[m.type]) byType[m.type]={count:0,total:0}; byType[m.type].count++; byType[m.type].total += Number(m.total)||0; });
   const typeRows = Object.entries(byType).sort((a,b)=>b[1].total-a[1].total);
-  bgtTypeChart = renderBudgetPieChart('bgt-type-chart', bgtTypeChart, typeRows, k=>BGT_TYPE_NAMES[k]||k.toUpperCase(), k=>BGT_TYPE_COLORS[k]||'#bbb');
+  const byProj = {};
+  approved.forEach(m=>{ const p=m.project||'ไม่ระบุ'; if(!byProj[p]) byProj[p]={count:0,total:0}; byProj[p].count++; byProj[p].total += Number(m.total)||0; });
+  const projAggRows = Object.entries(byProj).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
+  bgtTypeChart = renderBudgetPieChart('bgt-type-chart', bgtTypeChart, typeRows, k=>BGT_TYPE_NAMES[k]||k.toUpperCase(), k=>BGT_TYPE_COLORS[k]||'#bbb', k=>{_bgtDrill.type=k; renderBudget();});
+  bgtProjChart = renderBudgetPieChart('bgt-proj-chart', bgtProjChart, projAggRows, k=>k, (_,i)=>BGT_PROJ_PALETTE[i%BGT_PROJ_PALETTE.length], k=>{_bgtDrill.project=k; renderBudget();});
   renderBudgetTrend(all);
 
   document.getElementById('bgt-alerts').innerHTML = projRows.filter(r=>r.util>=70).map(r=>`<span class="badge ${r.util>90?'badge-red':'badge-amber'}">${esc(r.project)} ${r.util}%</span>`).join(' ') || '<span style="color:var(--text-3)">ไม่มีแจ้งเตือน</span>';
@@ -137,6 +144,8 @@ function renderBudget() {
   const q=(val('#bgt-search')||'').toLowerCase().trim();
   const fType=val('#bgt-filter-type')||'all'; const fStatus=val('#bgt-filter-status')||'all'; const min=val('#bgt-min'); const max=val('#bgt-max');
   let memos=[...all];
+  if(_bgtDrill.project!=='all') memos=memos.filter(m=>(m.project||'ไม่ระบุ')===_bgtDrill.project);
+  if(_bgtDrill.type!=='all') memos=memos.filter(m=>m.type===_bgtDrill.type);
   if(fType!=='all') memos=memos.filter(m=>m.type===fType);
   if(fStatus!=='all') memos=memos.filter(m=>memoStatusKey(m)===fStatus);
   if(min!==''&& !Number.isNaN(Number(min))) memos=memos.filter(m=>(Number(m.total)||0)>=Number(min));

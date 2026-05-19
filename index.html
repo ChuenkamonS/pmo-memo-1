@@ -1148,20 +1148,27 @@ svg.icon { display: inline-block; vertical-align: middle; }
           <div class="metric-card"><div class="metric-label">Budget Utilization</div><div class="metric-val" id="bgt-util">0%</div><div class="metric-sub" id="bgt-near-limit">0 Projects > 80%</div></div>
         </div>
 
-        <div class="card"><div class="card-title" style="margin-bottom:8px">Budget Alerts <span style="font-size:11px;color:var(--text-3);font-weight:400">แจ้งเตือนโครงการที่ใกล้/เกินงบ</span></div><div id="bgt-alerts"></div></div>
+        <div class="metric-row" style="grid-template-columns:repeat(2,1fr)">
+          <div class="metric-card"><div class="metric-label">Highest Growth Project</div><div class="metric-val" id="bgt-growth">—</div></div>
+          <div class="metric-card"><div class="metric-label">Average Monthly Spend</div><div class="metric-val" id="bgt-avg">฿0</div></div>
+        </div>
+
+        <div class="card"><div class="card-title" style="margin-bottom:8px">Budget Alerts</div><div id="bgt-alerts"></div></div>
 
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px">
           <div class="card"><div class="card-title">Monthly Trend (12 เดือน)</div><div style="height:280px"><canvas id="bgt-trend-chart"></canvas></div></div>
           <div class="card"><div class="card-title">Spend by Type</div><div style="height:280px"><canvas id="bgt-type-chart"></canvas></div></div>
         </div>
 
-                <div class="card" style="padding:0;overflow:hidden">
+        <div class="card"><div class="card-title" style="margin-bottom:10px">Spend by Project (Top 5)</div><div style="height:260px"><canvas id="bgt-proj-chart"></canvas></div></div>
+
+        <div class="card" style="padding:0;overflow:hidden">
           <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0"><span class="card-title">Project Financial Summary</span></div>
           <table class="hist-table"><thead><tr><th>Project</th><th>Budget</th><th>Approved</th><th>Pending</th><th>Remaining</th><th>Utilization</th><th>Status</th></tr></thead><tbody id="bgt-summary-body"></tbody></table>
         </div>
 
         <div class="card" style="padding:0;overflow:hidden">
-          <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0"><span class="card-title">Memo Table</span></div>
+          <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0"><span class="card-title">Memo Drilldown</span></div>
           <table class="hist-table"><thead><tr><th style="padding-left:16px">Memo</th><th>Type</th><th>Project</th><th>Requester</th><th>Approver</th><th>Approval Date</th><th>Amount</th><th>Status</th><th>Detail</th><th>PDF</th></tr></thead><tbody id="bgt-memo-body"></tbody></table>
         </div>
       </div>
