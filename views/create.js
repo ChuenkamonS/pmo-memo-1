@@ -250,3 +250,106 @@ async function generateMemoPdf() {
 function resetMemoForm() {
   if(confirm('ล้างข้อมูลที่กรอกหรือไม่?')) location.reload();
 }
+
+// ── Duplicate from History ──
+function applyDuplicateDraft() {
+  const key = typeof HIST_DUPLICATE_KEY !== 'undefined' ? HIST_DUPLICATE_KEY : 'orbit-pmo-duplicate-draft';
+  let raw;
+  try { raw = sessionStorage.getItem(key); } catch (e) { return; }
+  if (!raw) return;
+  let memo;
+  try { memo = JSON.parse(raw); } catch (e) { return; }
+  sessionStorage.removeItem(key);
+
+  const typeBtn = document.querySelector(`.type-btn[onclick*="'${memo.type}'"]`);
+  if (memo.type && typeBtn) selectType(memo.type, typeBtn);
+
+  setNextMemoNo();
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
+  const projects = ['AOA-MP', 'TTB', 'Geo9', 'Release 2.1', 'Release 3'];
+  if (memo.project && projects.includes(memo.project)) {
+    set('f-project', memo.project);
+    const ow = document.getElementById('project-other-wrap');
+    if (ow) ow.style.display = 'none';
+  } else if (memo.project) {
+    set('f-project', 'other');
+    set('f-project-other', memo.project);
+    toggleOtherProject();
+  }
+  set('f-subject', memo.subject || '');
+  set('f-requester-name', memo.requesterName || memo.reviewerName || '');
+  set('f-requester-title', memo.requesterTitle || 'PMO');
+  if (memo.to) set('f-to', memo.to);
+
+  const reasonSel = document.getElementById('f-reason');
+  if (reasonSel && memo.reason) {
+    const match = [...reasonSel.options].find(o => o.value === memo.reason);
+    if (match) { reasonSel.value = memo.reason; document.getElementById('other-wrap').style.display = 'none'; }
+    else {
+      reasonSel.value = 'other';
+      toggleOther();
+      set('f-reason-other', memo.reason);
+    }
+  }
+
+  const revCard = document.querySelector('#rev-num')?.closest('.card');
+  const revInputs = revCard?.querySelectorAll('input');
+  if (revInputs?.length >= 6) {
+    revInputs[0].value = memo.reviewerName || '';
+    revInputs[1].value = memo.reviewerTitle || '';
+    revInputs[3].value = memo.approverName || '';
+    revInputs[4].value = memo.approverTitle || '';
+  }
+
+  if (memo.type === 'sl') {
+    const section = memo.sections?.find(s => s.title === 'รายการ Software');
+    if (section) {
+      const doc = new DOMParser().parseFromString(section.html, 'text/html');
+      const rows = doc.querySelectorAll('tbody tr');
+      const container = document.getElementById('sl-rows');
+      if (container && rows.length) {
+        container.innerHTML = '';
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('td');
+          if (cells.length < 5) return;
+          addSLRow();
+          const r = container.lastElementChild;
+          const inp = r.querySelectorAll('input');
+          inp[0].value = cells[1]?.textContent?.trim() || '';
+          inp[1].value = String(cells[2]?.textContent || '').replace(/[^\d.]/g, '') || '';
+          inp[2].value = cells[3]?.textContent?.trim() || '12';
+          inp[3].value = cells[4]?.textContent?.trim() || '1';
+        });
+        calcSL();
+      }
+    }
+  }
+  if (memo.type === 'hw') {
+    const section = memo.sections?.find(s => s.title === 'รายการ Hardware');
+    if (section) {
+      const doc = new DOMParser().parseFromString(section.html, 'text/html');
+      const rows = doc.querySelectorAll('tbody tr');
+      const container = document.getElementById('hw-rows');
+      if (container && rows.length) {
+        container.innerHTML = '';
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('td');
+          if (cells.length < 4) return;
+          addHWRow();
+          const r = container.lastElementChild;
+          const inp = r.querySelectorAll('input');
+          inp[0].value = cells[1]?.textContent?.trim() || '';
+          inp[1].value = String(cells[2]?.textContent || '').replace(/[^\d.]/g, '') || '';
+          inp[2].value = cells[3]?.textContent?.trim() || '1';
+        });
+        calcHW();
+      }
+    }
+  }
+
+  const banner = document.createElement('div');
+  banner.style.cssText = 'margin-bottom:12px;padding:10px 14px;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--r-sm);font-size:12px;color:var(--blue-800)';
+  banner.textContent = `คัดลอกจาก ${memo._duplicateFrom || 'Memo เดิม'} — ตรวจสอบรายการแล้วกด Save & Generate PDF`;
+  const formBody = document.getElementById('form-body');
+  if (formBody?.parentNode) formBody.parentNode.insertBefore(banner, formBody);
+}

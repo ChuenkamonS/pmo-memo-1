@@ -100,6 +100,7 @@ function swView(id, el, title) {
   if(id === 'budget') renderBudget();
   if(id === 'license') renderLicense();
   if(id === 'device') renderDevice();
+  if(id === 'history') renderHistoryMemos();
 }
 function toggleMemoSub(el) {
   el.classList.add('active');

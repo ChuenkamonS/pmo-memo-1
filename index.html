@@ -988,31 +988,77 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ HISTORY ════ -->
       <div id="view-history" class="view">
-        <div class="filter-row">
-          <select id="hist-status" onchange="renderHistoryMemos()"><option value="all">ทุกสถานะ</option><option value="completed">Completed</option><option value="rejected">Rejected</option></select>
+        <div class="hist-toolbar">
+          <input type="search" id="hist-search" class="hist-search" placeholder="ค้นหา Memo, ผู้ขอ, โครงการ…" oninput="renderHistoryMemos()">
+          <select id="hist-status" onchange="renderHistoryMemos()">
+            <option value="all">ทุกสถานะ</option>
+            <option value="completed">Completed</option>
+            <option value="rejected">Rejected</option>
+            <option value="pending">Pending</option>
+            <option value="pending_a1">Pending A1</option>
+            <option value="pending_a2">Pending A2</option>
+            <option value="draft">Draft</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="expired">Expired</option>
+          </select>
           <select id="hist-type" onchange="renderHistoryMemos()"><option value="all">ทุกประเภท</option><option value="sl">SL</option><option value="hw">HW</option><option value="int">INT</option><option value="ent">ENT</option><option value="dep">DEP</option></select>
           <select id="hist-project" onchange="renderHistoryMemos()"><option value="all">ทุกโครงการ</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option><option>Release 2.1</option><option>Release 3</option></select>
           <select id="hist-range" onchange="renderHistoryMemos()"><option value="month">เดือนนี้</option><option value="last-month">เดือนที่แล้ว</option><option value="3-months">3 เดือน</option><option value="all">ทั้งหมด</option></select>
-          <button class="btn-export" onclick="exportHistoryCsv()">
+          <select id="hist-sort" onchange="renderHistoryMemos()">
+            <option value="updated-desc">อัปเดตล่าสุด</option>
+            <option value="updated-asc">อัปเดตเก่าสุด</option>
+            <option value="created-desc">สร้างล่าสุด</option>
+            <option value="created-asc">สร้างเก่าสุด</option>
+            <option value="amount-desc">วงเงินมาก→น้อย</option>
+            <option value="amount-asc">วงเงินน้อย→มาก</option>
+            <option value="project-asc">โครงการ A-Z</option>
+            <option value="status-asc">สถานะ</option>
+          </select>
+          <button type="button" class="hist-filter-toggle" id="hist-filter-toggle" onclick="toggleHistFilters()" aria-expanded="false">ตัวกรองเพิ่มเติม</button>
+          <button type="button" class="btn-export" onclick="exportHistoryCsv()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
           </button>
         </div>
-        <div class="card" style="padding:0;overflow:hidden">
-          <table class="hist-table">
+        <div id="hist-filters-advanced" class="hist-filters-advanced">
+          <input type="date" id="hist-date-from" title="จากวันที่" onchange="renderHistoryMemos()">
+          <span class="hist-filter-sep">–</span>
+          <input type="date" id="hist-date-to" title="ถึงวันที่" onchange="renderHistoryMemos()">
+          <select id="hist-amt-preset" onchange="renderHistoryMemos()">
+            <option value="all">ทุกวงเงิน</option>
+            <option value="gt100k">&gt; 100k</option>
+            <option value="50k-100k">50k – 100k</option>
+            <option value="lt50k">&lt; 50k</option>
+          </select>
+          <input type="number" id="hist-amt-min" class="hist-amt-input" placeholder="ขั้นต่ำ ฿" min="0" onchange="renderHistoryMemos()">
+          <input type="number" id="hist-amt-max" class="hist-amt-input" placeholder="สูงสุด ฿" min="0" onchange="renderHistoryMemos()">
+          <select id="hist-requester" onchange="renderHistoryMemos()"><option value="all">ผู้ขอทั้งหมด</option></select>
+          <select id="hist-approver" onchange="renderHistoryMemos()"><option value="all">ผู้อนุมัติทั้งหมด</option></select>
+        </div>
+        <div class="hist-table-bar">
+          <span id="hist-result-count" class="hist-result-count">แสดง 0 รายการ</span>
+          <span class="hist-table-hint">คลิกแถวเพื่อดูรายละเอียด · Audit log อ่านอย่างเดียว</span>
+        </div>
+        <div class="card hist-table-card" id="hist-table-wrap">
+          <table class="hist-table hist-table--dense">
             <thead><tr>
-              <th style="width:18%;padding-left:16px">เลข Memo</th>
-              <th style="width:8%">Type</th>
-              <th style="width:13%">โครงการ</th>
-              <th style="width:11%">วงเงิน</th>
-              <th style="width:10%">วันที่</th>
-              <th style="width:10%">สถานะ</th>
-              <th style="width:22%">Rejection Reason</th>
-              <th style="width:8%;text-align:center">PDF</th>
+              <th class="hist-col-memo">Memo</th>
+              <th>Type</th>
+              <th>โครงการ</th>
+              <th>ผู้ขอ</th>
+              <th>วงเงิน</th>
+              <th>สถานะ</th>
+              <th>ผู้อนุมัติ</th>
+              <th>สร้าง</th>
+              <th>อัปเดต</th>
+              <th>ระยะเวลา</th>
+              <th>Reject</th>
+              <th class="hist-col-actions">Actions</th>
             </tr></thead>
             <tbody id="history-body"></tbody>
           </table>
         </div>
+        <div id="hist-reject-popover" class="hist-reject-popover" role="tooltip"></div>
       </div>
 
       <!-- ════ BUDGET ════ -->
