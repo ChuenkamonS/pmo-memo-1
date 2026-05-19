@@ -490,11 +490,12 @@ function renderHistoryMemos() {
     </tr>`;
   }).join('');
 
-  const wrap = document.getElementById('hist-table-wrap');
-  if (wrap && !wrap.dataset.bound) {
-    wrap.dataset.bound = '1';
-    wrap.addEventListener('click', handleHistoryTableClick);
-  }
+  body.querySelectorAll('.hist-act-btn, .hist-reject-btn').forEach(btn => {
+    btn.addEventListener('click', handleHistoryTableClick);
+  });
+  body.querySelectorAll('tr[data-memo]').forEach(row => {
+    row.addEventListener('click', handleHistoryTableClick);
+  });
 }
 
 document.addEventListener('click', e => {
