@@ -543,8 +543,73 @@ body {
   vertical-align: middle;
 }
 .hist-table tr:last-child td { border-bottom: none; }
-.hist-table tbody tr { transition: background .1s; cursor: default; }
-.hist-table tbody tr:hover td { background: var(--bg); }
+.hist-table tbody tr.hist-row { transition: background .1s; cursor: pointer; }
+.hist-table tbody tr.hist-row:hover td { background: var(--bg); }
+.filter-row input[type="search"],
+.filter-row input[type="text"] {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; padding: 6px 10px;
+  border: 1px solid var(--border-md); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text); outline: none;
+  min-width: 200px; flex: 1 1 200px;
+}
+.filter-row input[type="date"],
+.filter-row input[type="number"] {
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 12px; padding: 6px 10px;
+  border: 1px solid var(--border-md); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text);
+}
+.hist-adv-panel {
+  display: none; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-bottom: 12px; padding: 10px 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+.hist-adv-panel.is-open { display: flex; }
+.hist-adv-sep { font-size: 11px; color: var(--text-3); }
+.hist-amt-input { width: 96px; }
+.hist-actions { display: inline-flex; align-items: center; gap: 4px; justify-content: center; }
+.hist-act-btn { padding: 4px 7px !important; min-width: 28px; justify-content: center; }
+.hist-act-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.hist-memo-no { font-weight: 600; color: var(--blue-800); }
+.hist-cell-clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-table tbody tr.hist-row { cursor: pointer; }
+.hist-amt { text-align: right; white-space: nowrap; }
+.hist-dt { font-size: 11px; color: var(--text-2); white-space: nowrap; }
+.hist-reject-btn {
+  background: none; border: none; padding: 0; margin: 0; cursor: pointer;
+  font-size: 11px; color: var(--red); text-align: left;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hist-reject-btn:hover { text-decoration: underline; }
+.hist-reject-popover {
+  display: none; position: fixed; z-index: 400; max-width: 320px;
+  padding: 10px 12px; background: var(--surface);
+  border: 1px solid var(--border-md); border-radius: var(--r-sm);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12); font-size: 12px; line-height: 1.5;
+}
+.hist-empty { text-align: center; padding: 32px 16px !important; color: var(--text-3); }
+.hist-detail-meta {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; margin-bottom: 14px; padding: 12px;
+  background: var(--bg); border-radius: var(--r-sm);
+}
+.hist-detail-meta .lbl { display: block; font-size: 9px; font-weight: 700; color: var(--text-3); text-transform: uppercase; margin-bottom: 2px; }
+.hist-detail-block { margin-bottom: 14px; }
+.hist-detail-block-title { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; margin-bottom: 8px; }
+.hist-detail-note { padding: 10px; border-radius: var(--r-sm); font-size: 12px; margin-bottom: 10px; }
+.hist-detail-note--ok { background: var(--green-50); }
+.hist-detail-note--err { background: var(--red-50); }
+.hist-timeline { border-left: 2px solid var(--border-md); margin-left: 6px; padding-left: 14px; }
+.hist-timeline-item { position: relative; margin-bottom: 12px; }
+.hist-timeline-dot { position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); border: 2px solid var(--surface); }
+.hist-timeline-dot.reject { background: var(--red); }
+.hist-timeline-dot.done { background: var(--green); }
+.hist-audit-log { max-height: 160px; overflow-y: auto; }
+.hist-audit-row { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+.hist-audit-time { color: var(--text-3); white-space: nowrap; min-width: 100px; }
+.hist-linked-row { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
 
 /* ── PLACEHOLDER ── */
 .placeholder {
@@ -988,8 +1053,8 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ HISTORY ════ -->
       <div id="view-history" class="view">
-        <div class="hist-toolbar">
-          <input type="search" id="hist-search" class="hist-search" placeholder="ค้นหา Memo, ผู้ขอ, โครงการ…" oninput="renderHistoryMemos()">
+        <div class="filter-row" style="margin-bottom:12px">
+          <input type="search" id="hist-search" placeholder="🔍 ค้นหา Memo, ผู้ขอ, โครงการ…" oninput="renderHistoryMemos()">
           <select id="hist-status" onchange="renderHistoryMemos()">
             <option value="all">ทุกสถานะ</option>
             <option value="completed">Completed</option>
@@ -1014,15 +1079,15 @@ svg.icon { display: inline-block; vertical-align: middle; }
             <option value="project-asc">โครงการ A-Z</option>
             <option value="status-asc">สถานะ</option>
           </select>
-          <button type="button" class="hist-filter-toggle" id="hist-filter-toggle" onclick="toggleHistFilters()" aria-expanded="false">ตัวกรองเพิ่มเติม</button>
+          <button type="button" class="btn-sm" id="hist-filter-toggle" onclick="toggleHistFilters()" aria-expanded="false">ตัวกรองเพิ่มเติม</button>
           <button type="button" class="btn-export" onclick="exportHistoryCsv()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
           </button>
         </div>
-        <div id="hist-filters-advanced" class="hist-filters-advanced">
+        <div id="hist-filters-advanced" class="hist-adv-panel filter-row" style="margin-bottom:12px">
           <input type="date" id="hist-date-from" title="จากวันที่" onchange="renderHistoryMemos()">
-          <span class="hist-filter-sep">–</span>
+          <span class="hist-adv-sep">–</span>
           <input type="date" id="hist-date-to" title="ถึงวันที่" onchange="renderHistoryMemos()">
           <select id="hist-amt-preset" onchange="renderHistoryMemos()">
             <option value="all">ทุกวงเงิน</option>
@@ -1035,28 +1100,30 @@ svg.icon { display: inline-block; vertical-align: middle; }
           <select id="hist-requester" onchange="renderHistoryMemos()"><option value="all">ผู้ขอทั้งหมด</option></select>
           <select id="hist-approver" onchange="renderHistoryMemos()"><option value="all">ผู้อนุมัติทั้งหมด</option></select>
         </div>
-        <div class="hist-table-bar">
-          <span id="hist-result-count" class="hist-result-count">แสดง 0 รายการ</span>
-          <span class="hist-table-hint">คลิกแถวเพื่อดูรายละเอียด · Audit log อ่านอย่างเดียว</span>
-        </div>
-        <div class="card hist-table-card" id="hist-table-wrap">
-          <table class="hist-table hist-table--dense">
-            <thead><tr>
-              <th class="hist-col-memo">Memo</th>
-              <th>Type</th>
-              <th>โครงการ</th>
-              <th>ผู้ขอ</th>
-              <th>วงเงิน</th>
-              <th>สถานะ</th>
-              <th>ผู้อนุมัติ</th>
-              <th>สร้าง</th>
-              <th>อัปเดต</th>
-              <th>ระยะเวลา</th>
-              <th>Reject</th>
-              <th class="hist-col-actions">Actions</th>
-            </tr></thead>
-            <tbody id="history-body"></tbody>
-          </table>
+        <div class="card" style="padding:0;overflow:hidden" id="hist-table-wrap">
+          <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <span class="card-title">Memo History</span>
+            <span id="hist-result-count" style="font-size:11px;color:var(--text-3);font-weight:400">แสดง 0 รายการ · คลิกแถวเพื่อดูรายละเอียด</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="hist-table">
+              <thead><tr>
+                <th style="width:11%;padding-left:16px">เลข Memo</th>
+                <th style="width:6%">Type</th>
+                <th style="width:10%">โครงการ</th>
+                <th style="width:10%">ผู้ขอ</th>
+                <th style="width:9%">วงเงิน</th>
+                <th style="width:9%">สถานะ</th>
+                <th style="width:10%">ผู้อนุมัติ</th>
+                <th style="width:7%">สร้าง</th>
+                <th style="width:7%">อัปเดต</th>
+                <th style="width:8%">ระยะเวลา</th>
+                <th style="width:11%">เหตุผล Reject</th>
+                <th style="width:12%;text-align:center">จัดการ</th>
+              </tr></thead>
+              <tbody id="history-body"></tbody>
+            </table>
+          </div>
         </div>
         <div id="hist-reject-popover" class="hist-reject-popover" role="tooltip"></div>
       </div>

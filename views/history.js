@@ -195,11 +195,10 @@ function toggleHistFilters() {
   const btn = document.getElementById('hist-filter-toggle');
   if (!panel) return;
   const open = panel.classList.toggle('is-open');
-  if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-}
-
-function closeHistRowMenus() {
-  document.querySelectorAll('.hist-row-menu.open').forEach(m => m.classList.remove('open'));
+  if (btn) {
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.style.background = open ? 'var(--bg)' : '';
+  }
 }
 
 // ── Linked data ──
@@ -244,8 +243,6 @@ function buildApprovalTimeline(memo) {
 function openHistoryDetail(memoNo) {
   const memo = getHistoryMemos().find(m => m.memoNo === memoNo);
   if (!memo) { alert('ไม่พบ Memo'); return; }
-  closeHistRowMenus();
-
   const sections = (memo.sections || []).map(s =>
     `<div class="hist-detail-section"><div class="hist-detail-section-title">${esc(s.title)}</div>${s.html}</div>`
   ).join('');
@@ -429,13 +426,19 @@ function exportHistoryCsv() {
   URL.revokeObjectURL(url);
 }
 
-// ── Row actions menu ──
-function toggleHistRowMenu(btn, event) {
-  event.stopPropagation();
-  const menu = btn.closest('.hist-row-menu');
-  const wasOpen = menu?.classList.contains('open');
-  closeHistRowMenus();
-  if (menu && !wasOpen) menu.classList.add('open');
+const HIST_ICON_VIEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const HIST_ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const HIST_ICON_PDF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+const HIST_ICON_CSV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+function histActionButtons(memo, canDup) {
+  const no = esc(memo.memoNo);
+  return `<div class="hist-actions">
+    <button type="button" class="btn-sm hist-act-btn" data-hist-action="detail" data-memo="${no}" title="ดูรายละเอียด">${HIST_ICON_VIEW}</button>
+    ${canDup ? `<button type="button" class="btn-sm hist-act-btn" data-hist-action="duplicate" data-memo="${no}" title="Duplicate">${HIST_ICON_COPY}</button>` : ''}
+    <button type="button" class="btn-sm hist-act-btn" data-hist-action="pdf" data-memo="${no}" title="Download PDF">${HIST_ICON_PDF}</button>
+    <button type="button" class="btn-sm hist-act-btn" data-hist-action="export" data-memo="${no}" title="Export Row">${HIST_ICON_CSV}</button>
+  </div>`;
 }
 
 function handleHistoryTableClick(e) {
@@ -444,7 +447,6 @@ function handleHistoryTableClick(e) {
     e.stopPropagation();
     const action = btn.dataset.histAction;
     const memoNo = btn.dataset.memo;
-    closeHistRowMenus();
     if (action === 'detail') openHistoryDetail(memoNo);
     else if (action === 'duplicate') duplicateMemoFromHistory(memoNo);
     else if (action === 'pdf') openMemoPdf(memoNo);
@@ -452,10 +454,6 @@ function handleHistoryTableClick(e) {
     else if (action === 'reject-reason') showRejectionReason(memoNo, e);
     return;
   }
-  const menuBtn = e.target.closest('[data-hist-menu-toggle]');
-  if (menuBtn) { toggleHistRowMenu(menuBtn, e); return; }
-  if (e.target.closest('.hist-row-menu')) return;
-  closeHistRowMenus();
   const row = e.target.closest('tr[data-memo]');
   if (row) openHistoryDetail(row.dataset.memo);
 }
@@ -468,7 +466,7 @@ function renderHistoryMemos() {
   if (!body) return;
 
   const memos = filteredHistoryMemos();
-  if (countEl) countEl.textContent = `แสดง ${memos.length} รายการ`;
+  if (countEl) countEl.textContent = `แสดง ${memos.length} รายการ · คลิกแถวเพื่อดูรายละเอียด`;
 
   if (!memos.length) {
     body.innerHTML = `<tr><td colspan="12" class="hist-empty">ยังไม่มี Memo ตามเงื่อนไขที่เลือก</td></tr>`;
@@ -481,31 +479,18 @@ function renderHistoryMemos() {
     const canDup = ['completed', 'rejected', 'expired'].includes(memo.status);
     return `
     <tr class="hist-row" data-memo="${esc(memo.memoNo)}" title="คลิกเพื่อดูรายละเอียด">
-      <td class="mono hist-memo-no">${esc(memo.memoNo)}</td>
+      <td class="mono hist-memo-no" style="padding-left:16px">${esc(memo.memoNo)}</td>
       <td><span class="badge ${badgeClass(memo.type)}">${esc(String(memo.type || '').toUpperCase())}</span></td>
-      <td class="hist-ellipsis" title="${esc(memo.project || '')}">${esc(memo.project || '—')}</td>
-      <td class="hist-ellipsis" title="${esc(histRequesterName(memo))}">${esc(histRequesterName(memo))}</td>
+      <td class="hist-cell-clip" title="${esc(memo.project || '')}">${esc(memo.project || '—')}</td>
+      <td class="hist-cell-clip" title="${esc(histRequesterName(memo))}">${esc(histRequesterName(memo))}</td>
       <td class="mono hist-amt">${esc(money(memo.total || 0))}</td>
       <td><span class="badge ${histStatusBadgeClass(memo)}">${esc(histStatusLabel(memo))}</span></td>
-      <td class="hist-ellipsis" title="${esc(histApproverName(memo))}">${esc(histApproverName(memo))}</td>
+      <td class="hist-cell-clip" title="${esc(histApproverName(memo))}">${esc(histApproverName(memo))}</td>
       <td class="hist-dt">${esc(shortDate(memo.createdAt))}</td>
       <td class="hist-dt">${esc(shortDate(histActivityAt(memo)))}</td>
-      <td class="hist-dur">${esc(formatApprovalDuration(memo))}</td>
-      <td class="hist-reject-cell">
-        ${rej ? `<button type="button" class="hist-reject-btn" data-hist-action="reject-reason" data-memo="${esc(memo.memoNo)}" title="${esc(rej)}">${esc(rejShort)}</button>` : '<span class="hist-muted">—</span>'}
-      </td>
-      <td class="hist-actions-cell" onclick="event.stopPropagation()">
-        <div class="hist-row-menu">
-          <button type="button" class="hist-menu-btn" data-hist-menu-toggle aria-label="Actions">&#8942;</button>
-          <div class="hist-menu-dropdown">
-            <button type="button" data-hist-action="detail" data-memo="${esc(memo.memoNo)}">View Details</button>
-            ${canDup ? `<button type="button" data-hist-action="duplicate" data-memo="${esc(memo.memoNo)}">Duplicate Memo</button>` : ''}
-            <button type="button" data-hist-action="pdf" data-memo="${esc(memo.memoNo)}">Download PDF</button>
-            <button type="button" data-hist-action="export" data-memo="${esc(memo.memoNo)}">Export Row</button>
-          </div>
-        </div>
-        <button type="button" class="hist-pdf-btn" data-hist-action="pdf" data-memo="${esc(memo.memoNo)}" title="Download PDF">PDF</button>
-      </td>
+      <td class="hist-dt">${esc(formatApprovalDuration(memo))}</td>
+      <td>${rej ? `<button type="button" class="hist-reject-btn" data-hist-action="reject-reason" data-memo="${esc(memo.memoNo)}" title="${esc(rej)}">${esc(rejShort)}</button>` : '<span style="color:var(--text-3)">—</span>'}</td>
+      <td style="text-align:center" onclick="event.stopPropagation()">${histActionButtons(memo, canDup)}</td>
     </tr>`;
   }).join('');
 
@@ -517,8 +502,7 @@ function renderHistoryMemos() {
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('.hist-row-menu') && !e.target.closest('#hist-reject-popover')) {
-    closeHistRowMenus();
+  if (!e.target.closest('.hist-reject-btn') && !e.target.closest('#hist-reject-popover')) {
     hideRejectionPopover();
   }
 });
