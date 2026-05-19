@@ -432,8 +432,8 @@ const HIST_ICON_PDF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 function histActionButtons(memo) {
   const no = esc(memo.memoNo);
   return `<div class="hist-actions">
-    <button type="button" class="btn-sm hist-act-btn" data-hist-action="detail" data-memo="${no}" onclick="event.stopPropagation();openHistoryDetail('${no}')" title="ดูรายละเอียด">${HIST_ICON_VIEW}</button>
-    <button type="button" class="btn-sm hist-act-btn" data-hist-action="pdf" data-memo="${no}" onclick="event.stopPropagation();openMemoPdf('${no}')" title="Download PDF">${HIST_ICON_PDF}</button>
+    <button type="button" class="btn-sm hist-act-btn" data-hist-action="detail" data-memo="${no}" title="ดูรายละเอียด">${HIST_ICON_VIEW}</button>
+    <button type="button" class="btn-sm hist-act-btn" data-hist-action="pdf" data-memo="${no}" title="Download PDF">${HIST_ICON_PDF}</button>
   </div>`;
 }
 
@@ -486,7 +486,7 @@ function renderHistoryMemos() {
       <td class="hist-dt">${esc(shortDate(histActivityAt(memo)))}</td>
       <td class="hist-dt">${esc(formatApprovalDuration(memo))}</td>
       <td>${rej ? `<button type="button" class="hist-reject-btn" data-hist-action="reject-reason" data-memo="${esc(memo.memoNo)}" title="${esc(rej)}">${esc(rejShort)}</button>` : '<span style="color:var(--text-3)">—</span>'}</td>
-      <td style="text-align:center">${histActionButtons(memo)}</td>
+      <td style="text-align:center" onclick="event.stopPropagation()">${histActionButtons(memo)}</td>
     </tr>`;
   }).join('');
 
