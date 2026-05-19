@@ -486,7 +486,7 @@ function renderHistoryMemos() {
       <td class="hist-dt">${esc(shortDate(histActivityAt(memo)))}</td>
       <td class="hist-dt">${esc(formatApprovalDuration(memo))}</td>
       <td>${rej ? `<button type="button" class="hist-reject-btn" data-hist-action="reject-reason" data-memo="${esc(memo.memoNo)}" title="${esc(rej)}">${esc(rejShort)}</button>` : '<span style="color:var(--text-3)">—</span>'}</td>
-      <td style="text-align:center">${histActionButtons(memo)}</td>
+      <td style="text-align:center" onclick="event.stopPropagation()">${histActionButtons(memo)}</td>
     </tr>`;
   }).join('');
 
