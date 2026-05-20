@@ -1,4 +1,170 @@
 // ─────────────────────────────────────────
+// Supabase client + storage layer
+// Replaces localStorage for memos, licenses, devices
+// ─────────────────────────────────────────
+const SUPA_URL = 'https://wokqtivoytzgfuelgeho.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indva3F0aXZveXR6Z2Z1ZWxnZWhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNTU1NjIsImV4cCI6MjA5NDgzMTU2Mn0.oGoGLuDBPA-P3dIDANOrqdgV9aqiAdPhVE9dGcE0H-Q';
+
+// ── Supabase REST helper ──
+async function supaFetch(table, method='GET', body=null, query='') {
+  const url = SUPA_URL + '/rest/v1/' + table + query;
+  const headers = {
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': method === 'POST' ? 'return=representation' : 'return=representation',
+  };
+  if(method === 'GET') headers['Accept'] = 'application/json';
+  const resp = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
+  if(!resp.ok) {
+    const err = await resp.text();
+    throw new Error('Supabase ' + method + ' ' + table + ': ' + err);
+  }
+  const text = await resp.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ── Memo field mapping: JS camelCase ↔ DB snake_case ──
+function memoToDb(m) {
+  return {
+    id: m.id || m.memoNo,
+    memo_no: m.memoNo,
+    type: m.type, type_label: m.typeLabel,
+    status: m.status || 'pending',
+    project: m.project, subject: m.subject, reason: m.reason,
+    to: m.to, date: m.date, total: Number(m.total)||0,
+    amount_words: m.amountWords,
+    requester_name: m.requesterName, requester_title: m.requesterTitle,
+    reviewer_name: m.reviewerName, reviewer_title: m.reviewerTitle, reviewer_date: m.reviewerDate,
+    approver_name: m.approverName, approver_title: m.approverTitle, approver_date: m.approverDate,
+    approved_by: m.approvedBy, rejected_by: m.rejectedBy,
+    approval_note: m.approvalNote, rejection_reason: m.rejectionReason,
+    fx_rate: m.fxRate || null,
+    sections: m.sections || [], audit_log: m.auditLog || [],
+    submitted_at: m.submittedAt || null,
+    approved_at: m.approvedAt || null, rejected_at: m.rejectedAt || null,
+    created_at: m.createdAt || new Date().toISOString(),
+    updated_at: m.updatedAt || new Date().toISOString(),
+  };
+}
+function dbToMemo(r) {
+  return {
+    id: r.memo_no, memoNo: r.memo_no,
+    type: r.type, typeLabel: r.type_label,
+    status: r.status, project: r.project, subject: r.subject, reason: r.reason,
+    to: r.to, date: r.date, total: Number(r.total)||0, amountWords: r.amount_words,
+    requesterName: r.requester_name, requesterTitle: r.requester_title,
+    reviewerName: r.reviewer_name, reviewerTitle: r.reviewer_title, reviewerDate: r.reviewer_date,
+    approverName: r.approver_name, approverTitle: r.approver_title, approverDate: r.approver_date,
+    approvedBy: r.approved_by, rejectedBy: r.rejected_by,
+    approvalNote: r.approval_note, rejectionReason: r.rejection_reason,
+    fxRate: r.fx_rate, sections: r.sections || [], auditLog: r.audit_log || [],
+    submittedAt: r.submitted_at, approvedAt: r.approved_at, rejectedAt: r.rejected_at,
+    createdAt: r.created_at, updatedAt: r.updated_at,
+  };
+}
+
+// ── Memo storage (async, with localStorage fallback) ──
+const MEMO_KEY = 'orbit-pmo-memos-v1';
+let _memCache = null;
+let _supaAvailable = null;
+
+async function checkSupa() {
+  if(_supaAvailable !== null) return _supaAvailable;
+  try {
+    await supaFetch('memos', 'GET', null, '?limit=1');
+    _supaAvailable = true;
+  } catch(e) {
+    console.warn('Supabase unavailable, using localStorage', e.message);
+    _supaAvailable = false;
+  }
+  return _supaAvailable;
+}
+
+async function loadMemosAsync() {
+  if(await checkSupa()) {
+    try {
+      const rows = await supaFetch('memos', 'GET', null, '?order=created_at.desc&limit=500');
+      _memCache = (rows||[]).map(dbToMemo);
+      // Sync to localStorage as backup
+      try { localStorage.setItem(MEMO_KEY, JSON.stringify(_memCache)); } catch(e) {}
+      return _memCache;
+    } catch(e) {
+      console.warn('Supabase read failed, fallback to localStorage');
+    }
+  }
+  // localStorage fallback
+  try { const p = JSON.parse(localStorage.getItem(MEMO_KEY)||'[]'); return Array.isArray(p)?p:[]; }
+  catch(e) { return []; }
+}
+
+async function saveMemoAsync(data) {
+  const now = new Date().toISOString();
+  const existing = (await loadMemosAsync()).find(m => m.memoNo === data.memoNo);
+  const saved = { ...data, id:data.memoNo, status:data.status||'pending',
+    createdAt: existing ? existing.createdAt : now, updatedAt: now };
+
+  if(await checkSupa()) {
+    try {
+      const db = memoToDb(saved);
+      await supaFetch('memos', 'POST', db, '?on_conflict=memo_no');
+      _memCache = null; // invalidate cache
+      return saved;
+    } catch(e) { console.warn('Supabase save failed', e.message); }
+  }
+  // localStorage fallback
+  const memos = loadMemos();
+  const idx = memos.findIndex(m => m.memoNo === data.memoNo);
+  if(idx>=0) memos[idx]=saved; else memos.push(saved);
+  storeMemos(memos);
+  return saved;
+}
+
+async function updateMemoStatusAsync(memoNo, status, extra={}) {
+  const memos = await loadMemosAsync();
+  const memo = memos.find(m => m.memoNo === memoNo);
+  if(!memo) return null;
+  const updated = { ...memo, ...extra, status, updatedAt: new Date().toISOString() };
+  if(status==='completed') updated.approvedAt = updated.updatedAt;
+  if(status==='rejected')  updated.rejectedAt = updated.updatedAt;
+
+  if(await checkSupa()) {
+    try {
+      const patch = { status, updated_at: updated.updatedAt, ...Object.fromEntries(
+        Object.entries(extra).map(([k,v]) => [k.replace(/([A-Z])/g,'_').toLowerCase(), v])
+      )};
+      if(status==='completed') patch.approved_at = updated.approvedAt;
+      if(status==='rejected')  patch.rejected_at = updated.rejectedAt;
+      await supaFetch('memos', 'PATCH', patch, '?memo_no=eq.' + encodeURIComponent(memoNo));
+      _memCache = null;
+    } catch(e) { console.warn('Supabase patch failed', e.message); }
+  }
+  // also update localStorage
+  const lsMemos = loadMemos();
+  const idx = lsMemos.findIndex(m => m.memoNo === memoNo);
+  if(idx>=0) { lsMemos[idx]=updated; storeMemos(lsMemos); }
+  renderPendingMemos();
+  renderHistoryMemos();
+  return updated;
+}
+
+// ── Sync: push all localStorage memos to Supabase ──
+async function syncLocalToSupabase() {
+  if(!(await checkSupa())) return { ok:false, msg:'Supabase unavailable' };
+  const local = loadMemos();
+  if(!local.length) return { ok:true, pushed:0 };
+  let pushed = 0;
+  for(const m of local) {
+    try {
+      await supaFetch('memos', 'POST', memoToDb(m), '?on_conflict=memo_no');
+      pushed++;
+    } catch(e) { console.warn('Sync failed for', m.memoNo, e.message); }
+  }
+  _memCache = null;
+  return { ok:true, pushed };
+}
+
+// ─────────────────────────────────────────
 // app.js — shared utils, storage, nav, PDF
 // ─────────────────────────────────────────
 
@@ -46,7 +212,7 @@ function table(headers, rows, numericIndexes=[], centerIndexes=[]) {
 }
 
 // ── Storage ──
-const MEMO_KEY = 'orbit-pmo-memos-v1';
+// MEMO_KEY defined in Supabase layer above
 let _memMemos = [];
 function canUseLocalStorage() {
   try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return true; }
@@ -81,13 +247,16 @@ function setNextMemoNo() {
   if(el && !el.value.trim()) el.value = nextMemoNo();
 }
 function saveMemo(data) {
+  // Sync version for backward compat — also triggers async save to Supabase
   const now = new Date().toISOString();
   const memos = loadMemos();
   const idx = memos.findIndex(m => m.memoNo === data.memoNo);
-  const saved = { ...data, id:data.memoNo, status:'pending',
+  const saved = { ...data, id:data.memoNo, status:data.status||'pending',
     createdAt: idx>=0 ? memos[idx].createdAt : now, updatedAt: now };
   if(idx>=0) memos[idx]=saved; else memos.push(saved);
   storeMemos(memos);
+  // Async push to Supabase in background
+  saveMemoAsync(saved).catch(e => console.warn('Background Supabase save failed', e));
   return saved;
 }
 function updateMemoStatus(memoNo, status, extra={}) {
@@ -100,6 +269,8 @@ function updateMemoStatus(memoNo, status, extra={}) {
   storeMemos(memos);
   renderPendingMemos();
   renderHistoryMemos();
+  // Async push to Supabase in background
+  updateMemoStatusAsync(memoNo, status, extra).catch(e => console.warn('Supabase status update failed', e));
   return memos[idx];
 }
 
@@ -320,4 +491,10 @@ function initApp() {
   renderHistoryMemos();
   rebuildAcct();
   setInterval(() => fetch('https://memo-pdf-server.onrender.com/ping').catch(()=>{}), 4*60*1000);
+  // Load from Supabase on startup and refresh UI
+  loadMemosAsync().then(() => {
+    renderPendingMemos();
+    renderHistoryMemos();
+    setNextMemoNo();
+  }).catch(e => console.warn('Supabase init load failed', e));
 }
