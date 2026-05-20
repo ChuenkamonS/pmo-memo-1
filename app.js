@@ -27,8 +27,22 @@ function badgeClass(type) {
   return { sl:'badge-blue', hw:'badge-gray', int:'badge-green', ent:'badge-amber', dep:'badge-purple' }[type] || 'badge-gray';
 }
 function table(headers, rows, numericIndexes=[], centerIndexes=[]) {
-  // centerIndexes: columns to center-align; numericIndexes: right-align bold
-  return `<table><thead><tr>${headers.map(h=>`<th style="text-align:center">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map((c,i)=>`<td class="${numericIndexes.includes(i)?'num':''}" style="text-align:${numericIndexes.includes(i)||centerIndexes.includes(i)?'center':'left'}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  const thStyle = 'background:#e8e8e8;color:#111;font-weight:600;padding:8px 10px;text-align:center;border:1px solid #ccc;font-size:13pt';
+  const tdBase  = 'padding:7px 10px;border:1px solid #ccc;font-size:13pt';
+  // Last row = total row if numericIndexes provided
+  const bodyRows = rows.map((row, ri) => {
+    const isLast = ri === rows.length - 1 && numericIndexes.length > 0;
+    return '<tr>' + row.map((c,i) => {
+      const align = numericIndexes.includes(i) ? 'center' : centerIndexes.includes(i) ? 'center' : 'left';
+      const weight = numericIndexes.includes(i) ? 'font-weight:700;' : '';
+      const bg = isLast ? 'background:#f0f0f0;' : '';
+      return '<td style="' + tdBase + ';text-align:' + align + ';' + weight + bg + '">' + esc(c) + '</td>';
+    }).join('') + '</tr>';
+  });
+  return '<table style="width:100%;border-collapse:collapse;margin:6px 0">'
+    + '<thead><tr>' + headers.map(h => '<th style="' + thStyle + '">' + esc(h) + '</th>').join('') + '</tr></thead>'
+    + '<tbody>' + bodyRows.join('') + '</tbody>'
+    + '</table>';
 }
 
 // ── Storage ──
@@ -173,6 +187,12 @@ function renderMemoPdf(data) {
         H('<td class="tdl" style="text-align:left">', '<td style="text-align:center">');
         H('<td class="" style="text-align:left">', '<td style="text-align:left">');
         H('<td class="num" style="text-align:center">', '<td style="text-align:center;font-weight:700">');
+        // Add Total Amount row if not present
+        if(!html.includes('Total Amount') && data.total) {
+          const colspan = 5;
+          const totalRow = '<tr><td colspan="'+colspan+'" style="text-align:right;font-weight:700;background:#f0f0f0;padding:7px 10px;border:1px solid #ccc;font-size:13pt">Total Amount</td><td style="text-align:center;font-weight:700;background:#f0f0f0;padding:7px 10px;border:1px solid #ccc;font-size:13pt">'+esc(money(data.total))+'</td></tr>';
+          html = html.replace('</tbody></table>', totalRow+'</tbody></table>');
+        }
       }
       return '<div style="margin-top:12px"><p style="font-weight:700;margin-bottom:6px">'+esc(s.title)+'</p>'+html+(s.title==='รายการ Software'?fxNote:'')+'</div>';
     }).join('')}
