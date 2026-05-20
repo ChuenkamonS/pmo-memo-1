@@ -23,7 +23,17 @@ function handleBulkImport(event) {
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const wb = XLSX.read(e.target.result, { type:'array', cellDates:true });
+      // Try reading normally first, fallback without cellDates if encrypted/error
+      let wb;
+      try {
+        wb = XLSX.read(e.target.result, { type:'array', cellDates:true, sheetStubs:true });
+      } catch(e1) {
+        try {
+          wb = XLSX.read(e.target.result, { type:'array', cellDates:false, sheetStubs:true });
+        } catch(e2) {
+          throw new Error('ไม่สามารถอ่านไฟล์ได้ — กรุณาใช้ไฟล์ .xlsx ที่ไม่มีการเข้ารหัส (Save As → Excel Workbook)');
+        }
+      }
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { defval:'' });
 
