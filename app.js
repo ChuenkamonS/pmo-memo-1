@@ -26,8 +26,9 @@ function dateInput(v) {
 function badgeClass(type) {
   return { sl:'badge-blue', hw:'badge-gray', int:'badge-green', ent:'badge-amber', dep:'badge-purple' }[type] || 'badge-gray';
 }
-function table(headers, rows, numericIndexes=[]) {
-  return `<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map((c,i)=>`<td class="${numericIndexes.includes(i)?'num':'tdl'}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+function table(headers, rows, numericIndexes=[], centerIndexes=[]) {
+  // centerIndexes: columns to center-align; numericIndexes: right-align bold
+  return `<table><thead><tr>${headers.map(h=>`<th style="text-align:center">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map((c,i)=>`<td class="${numericIndexes.includes(i)?'num':''}" style="text-align:${numericIndexes.includes(i)||centerIndexes.includes(i)?'center':'left'}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
 }
 
 // ── Storage ──
@@ -131,12 +132,7 @@ function renderMemoPdf(data) {
       ? `ในการนี้จึงขอให้ท่านโปรดพิจารณาอนุมัติงบประมาณรวมเป็นจำนวนเงินไม่เกิน <strong>${esc(money(data.total||0))}</strong> (${esc(data.amountWords||'-')})`
       : '';
 
-  const sectionsHtml = (data.sections||[]).map(s =>
-    `<div style="margin-top:12px">
-      <p style="font-weight:700;margin-bottom:6px">${esc(s.title)}</p>
-      ${s.html}
-    </div>`
-  ).join('');
+  // sectionsHtml rendered inline below with fxNote injection
 
   const fxNote = data.type === 'sl'
     ? `<p class="mp-note">* <u>หมายเหตุ</u> : เรทราคาโปรแกรมดังกล่าวแปลงเรทเงินตราจากหน่วย USD เป็น THB ณ วันที่ ${esc(data.date||TODAY)}${data.fxRate ? ` (1 USD = ฿${data.fxRate})` : ''}</p>`
@@ -154,9 +150,6 @@ function renderMemoPdf(data) {
       </div>
     </div>
 
-    <!-- Divider -->
-    <div style="border-bottom:1px solid #bbb;margin-bottom:14px"></div>
-
     <!-- Title -->
     <div class="mp-title">บันทึกข้อความ</div>
 
@@ -167,13 +160,25 @@ function renderMemoPdf(data) {
     <!-- Body -->
     <div class="mp-body"><p>${bodyText}</p></div>
 
-    <!-- Sections -->
-    ${sectionsHtml}
+    <!-- Sections with fxNote after SL table -->
+    ${(data.sections||[]).map(function(s){
+      let html = s.html;
+      if(s.title === 'รายการ Software') {
+        const H = (from, to) => { html = html.split(from).join(to); };
+        H('<th style="text-align:center">ชื่อ Software</th>', '<th style="text-align:center">Item</th>');
+        H('<th style="text-align:center">฿/เดือน</th>', '<th style="text-align:center">Price/Month (THB)</th>');
+        H('<th style="text-align:center">จำนวน</th>', '<th style="text-align:center">QTY (License)</th>');
+        H('<th style="text-align:center">รวม</th>', '<th style="text-align:center">Amount (THB)</th>');
+        H('<th style="text-align:center">เดือน</th>', '<th style="text-align:center">Month</th>');
+        H('<td class="tdl" style="text-align:left">', '<td style="text-align:center">');
+        H('<td class="" style="text-align:left">', '<td style="text-align:left">');
+        H('<td class="num" style="text-align:center">', '<td style="text-align:center;font-weight:700">');
+      }
+      return '<div style="margin-top:12px"><p style="font-weight:700;margin-bottom:6px">'+esc(s.title)+'</p>'+html+(s.title==='รายการ Software'?fxNote:'')+'</div>';
+    }).join('')}
 
-    ${fxNote}
-
-    <!-- Total -->
-    ${data.total ? `<div style="text-align:right;font-weight:700;margin:10px 0">${esc(money(data.total))}${data.amountWords ? `<br><span style="font-weight:400;font-size:12pt">(${esc(data.amountWords)})</span>` : ''}</div>` : ''}
+    <!-- Total (right-aligned, shown once above closing) -->
+    ${data.total ? `<div style="text-align:right;font-weight:700;font-size:15pt;margin:10px 0">${esc(money(data.total))}</div>` : ''}
 
     <!-- Closing -->
     ${closingText ? `<div class="mp-closing"><p>${closingText}</p></div>` : ''}
