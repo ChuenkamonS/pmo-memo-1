@@ -156,8 +156,10 @@ function renderMemoPdf(data) {
     ? `<p class="mp-note">* <u>หมายเหตุ</u> : เรทราคาโปรแกรมดังกล่าวแปลงเรทเงินตราจากหน่วย USD เป็น THB ณ วันที่ ${esc(data.date||TODAY)}${data.fxRate ? ` (1 USD = ฿${data.fxRate})` : ''}</p>`
     : '';
 
-  const reviewerDate = fmtDate(data.reviewerDate) || fmtDate(data.date);
-  const approverDate = fmtDate(data.approverDate) || fmtDate(data.date);
+  // Dates stored as Thai strings from dateInput() — display directly
+  // fmtDate only as safety net for raw ISO strings
+  const reviewerDate = data.reviewerDate && data.reviewerDate !== '-' ? data.reviewerDate : (data.date||'');
+  const approverDate = data.approverDate && data.approverDate !== '-' ? data.approverDate : (data.date||'');
 
   return `<div class="preview-wrap">
     <!-- Header row: memo no + date (logo injected by server) -->
