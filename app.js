@@ -184,15 +184,46 @@ function renderMemoPdf(data) {
         H('<th style="text-align:center">จำนวน</th>', '<th style="text-align:center">QTY (License)</th>');
         H('<th style="text-align:center">รวม</th>', '<th style="text-align:center">Amount (THB)</th>');
         H('<th style="text-align:center">เดือน</th>', '<th style="text-align:center">Month</th>');
-        H('<td class="tdl" style="text-align:left">', '<td style="text-align:center">');
-        H('<td class="" style="text-align:left">', '<td style="text-align:left">');
+        // Center everything, then fix item name column (index 1) back to left
+        H('<td class="tdl" style="text-align:left">', '<td style="text-align:left">');
+        H('<td class="" style="text-align:left">', '<td style="text-align:center">');
         H('<td class="num" style="text-align:center">', '<td style="text-align:center;font-weight:700">');
+        // Fix: first td in each row (#) should be center — it uses tdl class
+        // Re-process: make all td center, only keep left for item name cells
+        // Split by rows and fix per-column
+        html = html.replace(/<tr>(.*?)<\/tr>/gs, function(match, cells) {
+          const tds = [];
+          let idx = 0;
+          cells.replace(/<td([^>]*)>(.*?)<\/td>/gs, function(m, attrs, content) {
+            // col 1 (item name) = left, all others = center
+            const isLeft = idx === 1;
+            const isBold = attrs.includes('font-weight:700');
+            tds.push('<td style="padding:7px 10px;border:1px solid #ccc;font-size:13pt;text-align:'+(isLeft?'left':'center')+';'+(isBold?'font-weight:700;':'')+'">'+content+'</td>');
+            idx++;
+            return m;
+          });
+          return tds.length ? '<tr>'+tds.join('')+'</tr>' : match;
+        });
         // Add Total Amount row if not present
         if(!html.includes('Total Amount') && data.total) {
           const colspan = 5;
           const totalRow = '<tr><td colspan="'+colspan+'" style="text-align:right;font-weight:700;background:#f0f0f0;padding:7px 10px;border:1px solid #ccc;font-size:13pt">Total Amount</td><td style="text-align:center;font-weight:700;background:#f0f0f0;padding:7px 10px;border:1px solid #ccc;font-size:13pt">'+esc(money(data.total))+'</td></tr>';
           html = html.replace('</tbody></table>', totalRow+'</tbody></table>');
         }
+      }
+      if(s.title === 'ตาราง Account') {
+        // Center all td except email column (index 0 = left)
+        html = html.replace(/<tr>(.*?)<\/tr>/gs, function(match, cells) {
+          const tds = [];
+          let idx = 0;
+          cells.replace(/<td([^>]*)>(.*?)<\/td>/gs, function(m, attrs, content) {
+            const isLeft = idx === 0;
+            tds.push('<td style="padding:7px 10px;border:1px solid #ccc;font-size:13pt;text-align:'+(isLeft?'left':'center')+'">'+content+'</td>');
+            idx++;
+            return m;
+          });
+          return tds.length ? '<tr>'+tds.join('')+'</tr>' : match;
+        });
       }
       return '<div style="margin-top:12px"><p style="font-weight:700;margin-bottom:6px">'+esc(s.title)+'</p>'+html+(s.title==='รายการ Software'?fxNote:'')+'</div>';
     }).join('')}
