@@ -130,8 +130,10 @@ async function updateMemoStatusAsync(memoNo, status, extra={}) {
 
   if(await checkSupa()) {
     try {
+      // camelCase → snake_case: approvalNote → approval_note
+      const toSnake = s => s.replace(/([A-Z])/g, '_$1').toLowerCase();
       const patch = { status, updated_at: updated.updatedAt, ...Object.fromEntries(
-        Object.entries(extra).map(([k,v]) => [k.replace(/([A-Z])/g,'_').toLowerCase(), v])
+        Object.entries(extra).map(([k,v]) => [toSnake(k), v])
       )};
       if(status==='completed') patch.approved_at = updated.approvedAt;
       if(status==='rejected')  patch.rejected_at = updated.rejectedAt;
