@@ -1302,28 +1302,117 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ DEVICE REGISTRY ════ -->
       <div id="view-device" class="view">
-        <div class="metric-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+
+        <!-- Metric cards -->
+        <div class="metric-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
           <div class="metric-card"><div class="metric-label">Total Devices</div><div class="metric-val" id="dev-total" style="color:var(--blue)">0</div><div class="metric-sub" id="dev-total-sub"></div></div>
           <div class="metric-card"><div class="metric-label">In Use</div><div class="metric-val" id="dev-inuse" style="color:var(--green)">0</div><div class="metric-sub">มีผู้ถือครองอยู่</div></div>
           <div class="metric-card"><div class="metric-label">Warranty หมดแล้ว</div><div class="metric-val" id="dev-warranty-expired" style="color:var(--red)">0</div><div class="metric-sub">ต้องดำเนินการ</div></div>
           <div class="metric-card"><div class="metric-label">Available</div><div class="metric-val" id="dev-available" style="color:var(--gray)">0</div><div class="metric-sub">ยังไม่มีผู้ถือ</div></div>
         </div>
-        <div class="filter-row">
-          <select id="dev-filter-type" onchange="renderDevice()"><option value="all">ทุกประเภท</option><option value="mobile">Mobile Phone</option><option value="laptop">Laptop</option><option value="tablet">Tablet</option><option value="other">Other</option></select>
-          <select id="dev-filter-status" onchange="renderDevice()"><option value="all">ทุกสถานะ</option><option value="in-use">In Use</option><option value="available">Available</option><option value="maintenance">Maintenance</option><option value="retired">Retired</option></select>
-          <select id="dev-filter-project" onchange="renderDevice()"><option value="all">ทุกโครงการ</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option><option>Release 2.1</option><option>Release 3</option></select>
-          <button class="btn-export" onclick="exportDeviceCsv()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export CSV</button>
-          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="downloadTemplate('device')" title="Download Template">⬇ Template</button>
-          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="importBulk('device')" title="Import from Excel">
+
+        <!-- Summary tables side by side -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+
+          <!-- Table 1: Platform × Type -->
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600">Summary by Platform × Type</div>
+            <table class="hist-table" id="dev-summary-platform">
+              <thead><tr>
+                <th style="padding-left:16px">Platform</th>
+                <th>Mobile</th>
+                <th>Tablet</th>
+                <th>Other</th>
+                <th style="text-align:right;padding-right:16px">Total</th>
+              </tr></thead>
+              <tbody id="dev-summary-platform-body"></tbody>
+            </table>
+          </div>
+
+          <!-- Table 2: By Project -->
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600">Summary by Project</div>
+            <table class="hist-table" id="dev-summary-project">
+              <thead><tr>
+                <th style="padding-left:16px">โครงการ</th>
+                <th>In Use</th>
+                <th>Available</th>
+                <th>Other</th>
+                <th style="text-align:right;padding-right:16px">Total</th>
+              </tr></thead>
+              <tbody id="dev-summary-project-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Filter row -->
+        <div class="filter-row" style="margin-bottom:10px">
+          <input type="text" id="dev-search" placeholder="🔍 ค้นหา Device, Serial, Owner..."
+            style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface);min-width:200px;outline:none"
+            oninput="renderDevice()">
+          <select id="dev-filter-platform" onchange="renderDevice()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+            <option value="all">ทุก Platform</option>
+            <option value="ios">iOS</option>
+            <option value="android">Android</option>
+            <option value="huawei">Huawei</option>
+            <option value="windows">Windows</option>
+            <option value="other">Other</option>
+          </select>
+          <select id="dev-filter-type" onchange="renderDevice()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+            <option value="all">ทุกประเภท</option>
+            <option value="mobile">Mobile Phone</option>
+            <option value="tablet">Tablet</option>
+            <option value="laptop">Laptop</option>
+            <option value="other">Other</option>
+          </select>
+          <select id="dev-filter-status" onchange="renderDevice()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+            <option value="all">ทุกสถานะ</option>
+            <option value="in-use">In Use</option>
+            <option value="available">Available</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="retired">Retired</option>
+          </select>
+          <select id="dev-filter-project" onchange="renderDevice()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+            <option value="all">ทุกโครงการ</option>
+            <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
+            <option>Release 2.1</option><option>Release 3</option>
+          </select>
+          <select id="dev-filter-company" onchange="renderDevice()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+            <option value="all">ทุก Company</option>
+            <option value="BBIK">BBIK</option>
+            <option value="Orbit Digital">Orbit Digital</option>
+          </select>
+          <button class="btn-export" onclick="exportDeviceCsv()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="downloadTemplate('device')">⬇ Template</button>
+          <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="importBulk('device')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Import Excel
           </button>
-          <button class="btn-primary" style="margin-left:auto" onclick="openDeviceModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Device</button>
+          <button class="btn-primary" style="margin-left:auto" onclick="openDeviceModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Device
+          </button>
         </div>
+
+        <!-- Main registry table -->
         <div class="card" style="padding:0;overflow:hidden">
           <table class="hist-table">
             <thead><tr>
-              <th style="width:18%;padding-left:16px">Device Name</th><th style="width:10%">Type</th><th style="width:14%">Serial No.</th><th style="width:14%">ผู้ถือ</th><th style="width:12%">โครงการ</th><th style="width:10%">สภาพ</th><th style="width:12%">Warranty</th><th style="width:10%;text-align:center">สถานะ</th><th style="width:8%;text-align:center">Action</th>
+              <th style="width:13%;padding-left:16px">Device / Brand</th>
+              <th style="width:7%">Platform</th>
+              <th style="width:7%">Type</th>
+              <th style="width:10%">IT Asset ID</th>
+              <th style="width:10%">Serial No.</th>
+              <th style="width:10%">โครงการ</th>
+              <th style="width:10%">ผู้ถือ</th>
+              <th style="width:8%">Company</th>
+              <th style="width:8%">Condition</th>
+              <th style="width:9%">Warranty</th>
+              <th style="width:8%;text-align:center">สถานะ</th>
+              <th style="width:8%;text-align:center">Action</th>
             </tr></thead>
             <tbody id="dev-table-body"></tbody>
           </table>
@@ -1434,21 +1523,53 @@ svg.icon { display: inline-block; vertical-align: middle; }
     <input type="hidden" id="dev-edit-id">
     <div class="form-grid" style="margin-bottom:10px">
       <div class="fg"><label>Device Name *</label><input type="text" id="dev-name" placeholder="เช่น iPhone 15 Pro"></div>
-      <div class="fg"><label>Type *</label><select id="dev-type"><option value="mobile">Mobile Phone</option><option value="laptop">Laptop</option><option value="tablet">Tablet</option><option value="other">Other</option></select></div>
+      <div class="fg"><label>Brand / Model</label><input type="text" id="dev-brand" placeholder="เช่น Apple iPhone 15 Pro"></div>
+      <div class="fg"><label>Platform *</label>
+        <select id="dev-platform">
+          <option value="ios">iOS</option>
+          <option value="android">Android</option>
+          <option value="huawei">Huawei</option>
+          <option value="windows">Windows</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Type *</label>
+        <select id="dev-type">
+          <option value="mobile">Mobile Phone</option>
+          <option value="tablet">Tablet</option>
+          <option value="laptop">Laptop</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid" style="margin-bottom:10px">
+      <div class="fg"><label>IT Asset ID</label><input type="text" id="dev-asset" placeholder="เช่น OD-001"></div>
       <div class="fg"><label>Serial Number</label><input type="text" id="dev-serial" placeholder="S/N หรือ IMEI"></div>
-      <div class="fg"><label>Asset Tag</label><input type="text" id="dev-asset" placeholder="เช่น OD-001"></div>
+      <div class="fg"><label>Company</label>
+        <select id="dev-company">
+          <option value="">— ไม่ระบุ —</option>
+          <option value="BBIK">BBIK</option>
+          <option value="Orbit Digital">Orbit Digital</option>
+        </select>
+      </div>
+      <div class="fg"><label>โครงการ</label>
+        <select id="dev-project">
+          <option value="">— ไม่ระบุ —</option>
+          <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
+          <option>Release 2.1</option><option>Release 3</option>
+        </select>
+      </div>
     </div>
     <div class="form-grid" style="margin-bottom:10px">
       <div class="fg"><label>ผู้ถือครอง</label><input type="text" id="dev-owner" placeholder="ชื่อ-นามสกุล"></div>
       <div class="fg"><label>วันที่รับอุปกรณ์</label><input type="date" id="dev-assigned-date"></div>
-      <div class="fg"><label>โครงการ</label><select id="dev-project"><option value="">— ไม่ระบุ —</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option><option>Release 2.1</option><option>Release 3</option></select></div>
       <div class="fg"><label>Return Date</label><input type="date" id="dev-return-date"></div>
+      <div class="fg"><label>Link HW Memo</label><input type="text" id="dev-memo-ref" placeholder="เช่น ORB-2605-004"></div>
     </div>
     <div class="form-grid" style="margin-bottom:10px">
       <div class="fg"><label>Warranty Expiry</label><input type="date" id="dev-warranty"></div>
       <div class="fg"><label>สภาพ (Condition)</label><select id="dev-condition"><option value="new">New</option><option value="good">Good</option><option value="fair">Fair</option><option value="poor">Poor</option></select></div>
       <div class="fg"><label>สถานะ</label><select id="dev-status"><option value="in-use">In Use</option><option value="available">Available</option><option value="maintenance">Maintenance</option><option value="retired">Retired</option></select></div>
-      <div class="fg"><label>Link HW Memo</label><input type="text" id="dev-memo-ref" placeholder="เช่น ORB-2605-004"></div>
     </div>
     <div class="fg" style="margin-bottom:16px">
       <label>หมายเหตุ</label>
