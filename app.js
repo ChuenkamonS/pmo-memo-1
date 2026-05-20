@@ -3,7 +3,7 @@
 // Replaces localStorage for memos, licenses, devices
 // ─────────────────────────────────────────
 const SUPA_URL = 'https://wokqtivoytzgfuelgeho.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indva3F0aXZveXR6Z2Z1ZWxnZWhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNTU1NjIsImV4cCI6MjA5NDgzMTU2Mn0.oGoGLusBPA-P3dIDANOrqdgV9aqiAdPhVE9dGcE0H-Q';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indva3F0aXZveXR6Z2Z1ZWxnZWhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNTU1NjIsImV4cCI6MjA5NDgzMTU2Mn0.oGoGLuDBPA-P3dIDANOrqdgV9aqiAdPhVE9dGcE0H-Q';
 
 // ── Supabase REST helper ──
 async function supaFetch(table, method='GET', body=null, query='') {
@@ -267,10 +267,13 @@ function updateMemoStatus(memoNo, status, extra={}) {
   if(status==='completed') memos[idx].approvedAt = memos[idx].updatedAt;
   if(status==='rejected')  memos[idx].rejectedAt = memos[idx].updatedAt;
   storeMemos(memos);
+  _memCache = null; // force fresh read
   renderPendingMemos();
   renderHistoryMemos();
-  // Async push to Supabase in background
-  updateMemoStatusAsync(memoNo, status, extra).catch(e => console.warn('Supabase status update failed', e));
+  // Async update Supabase then re-render with confirmed server data
+  updateMemoStatusAsync(memoNo, status, extra)
+    .then(() => { renderPendingMemos(); renderHistoryMemos(); })
+    .catch(e => console.warn('Supabase status update failed', e));
   return memos[idx];
 }
 
