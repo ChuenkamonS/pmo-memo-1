@@ -177,8 +177,7 @@ function renderMemoPdf(data) {
       return '<div style="margin-top:12px"><p style="font-weight:700;margin-bottom:6px">'+esc(s.title)+'</p>'+html+(s.title==='รายการ Software'?fxNote:'')+'</div>';
     }).join('')}
 
-    <!-- Total (right-aligned, shown once above closing) -->
-    ${data.total ? `<div style="text-align:right;font-weight:700;font-size:15pt;margin:10px 0">${esc(money(data.total))}</div>` : ''}
+
 
     <!-- Closing -->
     ${closingText ? `<div class="mp-closing"><p>${closingText}</p></div>` : ''}
