@@ -125,10 +125,14 @@ function toggleMemoSub(el) {
 // ── PDF ──
 function renderMemoPdf(data) {
   // Use server CSS classes (.mp-*) — injected by PDF server with THSarabun font
-  function fmtDate(iso) {
-    if(!iso) return '';
-    const d = new Date(iso.length===10 ? iso+'T00:00:00' : iso);
-    return isNaN(d.getTime()) ? iso : `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()+543}`;
+  function fmtDate(v) {
+    if(!v || v === '-') return '';
+    // Already a Thai date string (e.g. "20 พฤษภาคม 2569") — return as-is
+    if(/[ก-๙]/.test(v)) return v;
+    // ISO date YYYY-MM-DD → convert to Thai Buddhist era DD/MM/YYYY
+    const d = new Date(v.length===10 ? v+'T00:00:00' : v);
+    if(isNaN(d.getTime())) return v;
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()+543}`;
   }
 
   const typeBody = {
