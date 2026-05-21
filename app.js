@@ -394,6 +394,8 @@ function renderMemoPdf(data) {
         H('<th style="text-align:center">จำนวน</th>', '<th style="text-align:center">QTY (License)</th>');
         H('<th style="text-align:center">รวม</th>', '<th style="text-align:center">Amount (THB)</th>');
         H('<th style="text-align:center">เดือน</th>', '<th style="text-align:center">Month</th>');
+        // Add No column header
+        H('<thead><tr>', '<thead><tr><th style="background:#e8e8e8;color:#111;font-weight:600;padding:8px 10px;text-align:center;border:1px solid #ccc;font-size:13pt;width:40px">No</th>');
         // Center everything, then fix item name column (index 1) back to left
         H('<td class="tdl" style="text-align:left">', '<td style="text-align:left">');
         H('<td class="" style="text-align:left">', '<td style="text-align:center">');
