@@ -292,6 +292,7 @@ function swView(id, el, title) {
   if(id === 'license') renderLicense();
   if(id === 'device') renderDevice();
   if(id === 'history') renderHistoryMemos();
+  if(id === 'settings') { if(typeof renderSettings==='function') renderSettings(); }
 }
 function toggleMemoSub(el) {
   el.classList.add('active');
@@ -502,4 +503,6 @@ function initApp() {
     renderHistoryMemos();
     setNextMemoNo();
   }).catch(e => console.warn('Supabase init load failed', e));
+  // Load settings and refresh all dropdowns
+  if(typeof initSettings === 'function') initSettings();
 }
