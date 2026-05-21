@@ -327,7 +327,25 @@ function renderMemoPdf(data) {
   const amtStr = data.total ? `<strong>${esc(money(data.total||0))}</strong> (${esc(data.amountWords||'-')})` : '';
 
   const closingMap = {
-    sl:  data.total ? `ในการนี้จึงขอให้ท่านโปรดพิจารณาอนุมัติงบประมาณสำหรับค่าใช้จ่ายดังกล่าว รวมเป็นจำนวนเงินไม่เกิน ${amtStr} ${authorityRef}` : '',
+    sl:  data.total ? (function(){
+      const slSection = (data.sections||[]).find(s => s.title === 'รายการ Software');
+      let totalSeats = 0, months = 12;
+      if(slSection && slSection.html) {
+        const doc = new DOMParser().parseFromString(slSection.html, 'text/html');
+        doc.querySelectorAll('tbody tr').forEach(row => {
+          const cells = row.querySelectorAll('td');
+          if(cells.length >= 5) {
+            const mo = parseInt(cells[3]?.textContent)||0;
+            const qty = parseInt(cells[4]?.textContent)||0;
+            if(mo) months = mo;
+            totalSeats += qty;
+          }
+        });
+      }
+      const seatsStr = totalSeats ? `จำนวนรวมทั้งหมด ${totalSeats} Seats ` : '';
+      const monthsStr = `ระยะเวลา ${months} เดือน `;
+      return `ในการนี้จึงขอให้ท่านโปรดพิจารณาอนุมัติงบประมาณสำหรับค่าใช้จ่ายดังกล่าว รวมเป็นจำนวนเงินไม่เกิน ${amtStr} ${seatsStr}${monthsStr}${authorityRef}`;
+    })() : '',
     hw:  data.total ? `จึงขอความกรุณาโปรดพิจารณาอนุมัติค่าใช้จ่ายสำหรับรายการจัดซื้อจ้างอ้างต้น ในวงเงิน ${amtStr} ถ้าอ้างอิงอำนาจอนุมัติจากคู่มืออำนาจอนุมัติ พ.ศ. 2566 ข้อ 3.2 การชำระเงิน (ที่มีการตั้งงบประมาณไว้) หมวดการชำระค่าบริการ ซึ่งให้อำนาจแก่ประธานเจ้าหน้าที่บริหารในวงเงินไม่เกิน 500,000 บาท` : '',
     int: data.total ? `ในการนี้จึงขอให้ท่านโปรดพิจารณาอนุมัติงบประมาณสำหรับค่ากิจกรรม Team Activity ดังกล่าว เป็นวงเงินจำนวนไม่เกิน ${amtStr} (แปดหมื่นสี่พันบาทถ้วน) ${authorityRef500k}` : '',
     ent: data.total ? `ในการนี้จึงขอให้ท่านโปรดพิจารณาอนุมัติงบประมาณค่ารับรองลูกค้าจาก ${esc(data.project||'-')} ในช่วงเวลาดังกล่าว ${authorityRef}` : '',
@@ -375,6 +393,8 @@ function renderMemoPdf(data) {
         H('<th style="text-align:center">จำนวน</th>', '<th style="text-align:center">QTY (License)</th>');
         H('<th style="text-align:center">รวม</th>', '<th style="text-align:center">Amount (THB)</th>');
         H('<th style="text-align:center">เดือน</th>', '<th style="text-align:center">Month</th>');
+        // Rename # → No in header
+        H('<th style="text-align:center">#</th>', '<th style="text-align:center">No</th>');
         // Center everything, then fix item name column (index 1) back to left
         H('<td class="tdl" style="text-align:left">', '<td style="text-align:left">');
         H('<td class="" style="text-align:left">', '<td style="text-align:center">');
@@ -403,9 +423,14 @@ function renderMemoPdf(data) {
         }
       }
       if(s.title === 'ตาราง Account') {
-        // Center all td except email column (index 0 = left)
+        // Add No column header
+        html = html.replace('<thead><tr>', '<thead><tr><th style="background:#e8e8e8;color:#111;font-weight:600;padding:8px 10px;text-align:center;border:1px solid #ccc;font-size:13pt;width:40px">No</th>');
+        // Add row number + center all td except account/email col (index 0 = left)
+        let rowNum = 0;
         html = html.replace(/<tr>(.*?)<\/tr>/gs, function(match, cells) {
-          const tds = [];
+          if(match.includes('<th')) return match; // skip header
+          rowNum++;
+          const tds = ['<td style="padding:7px 10px;border:1px solid #ccc;font-size:13pt;text-align:center">'+rowNum+'</td>'];
           let idx = 0;
           cells.replace(/<td([^>]*)>(.*?)<\/td>/gs, function(m, attrs, content) {
             const isLeft = idx === 0;
@@ -413,7 +438,7 @@ function renderMemoPdf(data) {
             idx++;
             return m;
           });
-          return tds.length ? '<tr>'+tds.join('')+'</tr>' : match;
+          return tds.length > 1 ? '<tr>'+tds.join('')+'</tr>' : match;
         });
       }
       return '<div style="margin-top:12px"><p style="font-weight:700;margin-bottom:6px">'+esc(s.title)+'</p>'+html+(s.title==='รายการ Software'?fxNote:'')+'</div>';
