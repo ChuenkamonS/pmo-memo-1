@@ -388,13 +388,16 @@ function renderMemoPdf(data) {
       let html = s.html;
       if(s.title === 'รายการ Software') {
         const H = (from, to) => { html = html.split(from).join(to); };
-        H('<th style="text-align:center">ชื่อ Software</th>', '<th style="text-align:center">Item</th>');
-        H('<th style="text-align:center">฿/เดือน</th>', '<th style="text-align:center">Price/Month (THB)</th>');
-        H('<th style="text-align:center">จำนวน</th>', '<th style="text-align:center">QTY (License)</th>');
-        H('<th style="text-align:center">รวม</th>', '<th style="text-align:center">Amount (THB)</th>');
-        H('<th style="text-align:center">เดือน</th>', '<th style="text-align:center">Month</th>');
-        // Rename # → No in header
-        H('<th style="text-align:center">#</th>', '<th style="text-align:center">No</th>');
+        // Rename headers using regex (full inline styles, not just text-align)
+        const renameHeader = (from, to) => {
+          html = html.replace(new RegExp('<th([^>]*)>' + from + '<\\/th>', 'g'), '<th$1>' + to + '</th>');
+        };
+        renameHeader('#', 'No');
+        renameHeader('ชื่อ Software', 'Item');
+        renameHeader('฿\\/เดือน', 'Price/Month (THB)');
+        renameHeader('จำนวน', 'QTY (License)');
+        renameHeader('รวม', 'Amount (THB)');
+        renameHeader('เดือน', 'Month');
         // Center everything, then fix item name column (index 1) back to left
         H('<td class="tdl" style="text-align:left">', '<td style="text-align:left">');
         H('<td class="" style="text-align:left">', '<td style="text-align:center">');
