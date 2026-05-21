@@ -292,6 +292,7 @@ function swView(id, el, title) {
   if(id === 'license') renderLicense();
   if(id === 'device') renderDevice();
   if(id === 'history') renderHistoryMemos();
+  if(id === 'settings') { if(typeof renderSettings==='function') renderSettings(); }
 }
 function toggleMemoSub(el) {
   el.classList.add('active');
@@ -326,27 +327,7 @@ function renderMemoPdf(data) {
   const amtStr = data.total ? `<strong>${esc(money(data.total||0))}</strong> (${esc(data.amountWords||'-')})` : '';
 
   const closingMap = {
-    sl:  data.total ? (function(){
-      // Extract total seats and months from SL section rows
-      const slSection = (data.sections||[]).find(s => s.title === 'รายการ Software');
-      let totalSeats = 0, months = 12;
-      if(slSection && slSection.html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(slSection.html, 'text/html');
-        doc.querySelectorAll('tbody tr').forEach(row => {
-          const cells = row.querySelectorAll('td');
-          if(cells.length >= 5) {
-            const mo = parseInt(cells[3]?.textContent?.trim())||0;
-            const qty = parseInt(cells[4]?.textContent?.trim())||0;
-            if(mo) months = mo;
-            totalSeats += qty;
-          }
-        });
-      }
-      const seatsStr = totalSeats ? `จำนวนรวมทั้งหมด ${totalSeats} Seats ` : '';
-      const monthsStr = `ระยะเวลา ${months} เดือน `;
-      return `ในการนี้จึงขอให้ท่านโปรดพิจารณาอนุมัติงบประมาณสำหรับค่าใช้จ่ายดังกล่าว รวมเป็นจำนวนเงินไม่เกิน ${amtStr} ${seatsStr}${monthsStr}${authorityRef}`;
-    })() : '',
+    sl:  data.total ? `ในการนี้จึงขอให้ท่านโปรดพิจารณาอนุมัติงบประมาณสำหรับค่าใช้จ่ายดังกล่าว รวมเป็นจำนวนเงินไม่เกิน ${amtStr} ${authorityRef}` : '',
     hw:  data.total ? `จึงขอความกรุณาโปรดพิจารณาอนุมัติค่าใช้จ่ายสำหรับรายการจัดซื้อจ้างอ้างต้น ในวงเงิน ${amtStr} ถ้าอ้างอิงอำนาจอนุมัติจากคู่มืออำนาจอนุมัติ พ.ศ. 2566 ข้อ 3.2 การชำระเงิน (ที่มีการตั้งงบประมาณไว้) หมวดการชำระค่าบริการ ซึ่งให้อำนาจแก่ประธานเจ้าหน้าที่บริหารในวงเงินไม่เกิน 500,000 บาท` : '',
     int: data.total ? `ในการนี้จึงขอให้ท่านโปรดพิจารณาอนุมัติงบประมาณสำหรับค่ากิจกรรม Team Activity ดังกล่าว เป็นวงเงินจำนวนไม่เกิน ${amtStr} (แปดหมื่นสี่พันบาทถ้วน) ${authorityRef500k}` : '',
     ent: data.total ? `ในการนี้จึงขอให้ท่านโปรดพิจารณาอนุมัติงบประมาณค่ารับรองลูกค้าจาก ${esc(data.project||'-')} ในช่วงเวลาดังกล่าว ${authorityRef}` : '',
@@ -422,23 +403,17 @@ function renderMemoPdf(data) {
         }
       }
       if(s.title === 'ตาราง Account') {
-        // Add No column to header
-        html = html.replace(/<thead><tr>/, '<thead><tr><th style="background:#e8e8e8;color:#111;font-weight:600;padding:8px 10px;text-align:center;border:1px solid #ccc;font-size:13pt;width:40px">No</th>');
-        // Add row number to each body row + center all td except email (index 1 after No)
-        let rowNum = 0;
+        // Center all td except email column (index 0 = left)
         html = html.replace(/<tr>(.*?)<\/tr>/gs, function(match, cells) {
-          // Skip header row (already handled)
-          if(match.includes('<th')) return match;
-          rowNum++;
-          const tds = ['<td style="padding:7px 10px;border:1px solid #ccc;font-size:13pt;text-align:center">'+rowNum+'</td>'];
+          const tds = [];
           let idx = 0;
           cells.replace(/<td([^>]*)>(.*?)<\/td>/gs, function(m, attrs, content) {
-            const isLeft = idx === 0; // email = left
+            const isLeft = idx === 0;
             tds.push('<td style="padding:7px 10px;border:1px solid #ccc;font-size:13pt;text-align:'+(isLeft?'left':'center')+'">'+content+'</td>');
             idx++;
             return m;
           });
-          return tds.length > 1 ? '<tr>'+tds.join('')+'</tr>' : match;
+          return tds.length ? '<tr>'+tds.join('')+'</tr>' : match;
         });
       }
       return '<div style="margin-top:12px"><p style="font-weight:700;margin-bottom:6px">'+esc(s.title)+'</p>'+html+(s.title==='รายการ Software'?fxNote:'')+'</div>';
@@ -528,4 +503,6 @@ function initApp() {
     renderHistoryMemos();
     setNextMemoNo();
   }).catch(e => console.warn('Supabase init load failed', e));
+  // Load settings and refresh all dropdowns
+  if(typeof initSettings === 'function') initSettings();
 }
