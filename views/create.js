@@ -25,12 +25,25 @@ function selectType(type, btn) {
   document.getElementById('fs-'+type).classList.add('active');
   const cfg = TYPE_CFG[type];
   document.getElementById('detail-title').textContent = cfg.title;
-  document.getElementById('f-to').value = cfg.to;
-  document.getElementById('f-appr-title').value = cfg.apprTitle;
+  // Use settings if available, fallback to TYPE_CFG defaults
+  const s = typeof loadSettings === 'function' ? loadSettings() : null;
+  const sCfg = s?.typeCfg?.[type];
+  document.getElementById('f-to').value = sCfg?.to || cfg.to;
+  document.getElementById('f-appr-title').value = sCfg?.apprTitle || cfg.apprTitle;
   const rs = document.getElementById('f-reason');
   rs.innerHTML = '<option value="">— เลือกเหตุผล —</option>';
-  cfg.reasons.forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; rs.appendChild(o); });
+  (sCfg?.reasons || cfg.reasons).forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; rs.appendChild(o); });
   rs.innerHTML += '<option value="other">อื่นๆ (กรอกเอง)</option>';
+  // Apply default reviewer/approver
+  if(s?.defaultReviewer?.name) {
+    const revInputEls = document.querySelector('#rev-num')?.closest('.card')
+      ? Array.from(document.querySelector('#rev-num').closest('.card').querySelectorAll('input[type="text"],input[type="date"]'))
+          .filter(el => el.id !== 'f-requester-name' && el.id !== 'f-requester-title')
+      : [];
+    if(revInputEls[0] && !revInputEls[0].value) revInputEls[0].value = s.defaultReviewer.name;
+    if(revInputEls[1] && !revInputEls[1].value) revInputEls[1].value = s.defaultReviewer.title || '';
+    if(revInputEls[3] && !revInputEls[3].value && s.defaultApprover?.name) revInputEls[3].value = s.defaultApprover.name;
+  }
   document.getElementById('form-hint').style.display = 'none';
   document.getElementById('form-body').style.display = 'block';
   document.getElementById('acct-card').style.display = type==='sl' ? 'block' : 'none';
