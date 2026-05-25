@@ -821,7 +821,7 @@ svg.icon { display: inline-block; vertical-align: middle; }
               <div class="fg"><label>ลงวันที่ *</label><input type="date" id="f-date"></div>
               <div class="fg">
                 <label>โครงการ *</label>
-                <select id="f-project" onchange="toggleOtherProject()">
+                <select id="f-project" onchange="toggleOtherProject();updateSubjectPreview()">
                   <option value="">— เลือกโครงการ —</option>
                   <option>AOA-MP</option><option>TTB</option><option>Geo9</option>
                   <option>Release 2.1</option><option>Release 3</option>
@@ -836,7 +836,7 @@ svg.icon { display: inline-block; vertical-align: middle; }
             </div>
             <div class="fg" style="margin-bottom:8px">
               <label>หัวข้อเรื่อง <span style="font-weight:400;color:var(--text-3)">(แก้ไขได้ optional)</span></label>
-              <input type="text" id="f-subject" placeholder="เว้นว่างเพื่อใช้อัตโนมัติ">
+              <input type="text" id="f-subject" placeholder="เว้นว่างเพื่อใช้อัตโนมัติ" oninput="this.dataset.manualEdit=this.value?'true':'false'" onfocus="if(!this.value)this.placeholder=memoSubject({type:selectedType,project:document.getElementById('f-project')?.value==='other'?document.getElementById('f-project-other')?.value:document.getElementById('f-project')?.value})">
             </div>
             <div class="fg">
               <label>เหตุผลในการขอ *</label>
