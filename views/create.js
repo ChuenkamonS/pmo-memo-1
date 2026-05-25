@@ -53,8 +53,21 @@ function selectType(type, btn) {
   // Use settings if available, fallback to TYPE_CFG defaults
   const s = typeof loadSettings === 'function' ? loadSettings() : null;
   const sCfg = s?.typeCfg?.[type];
-  document.getElementById('f-to').value = sCfg?.to || cfg.to;
-  document.getElementById('f-appr-title').value = sCfg?.apprTitle || cfg.apprTitle;
+  // Set เรียน dropdown to matching option if exists, else blank
+  const toSel = document.getElementById('f-to');
+  if(toSel) {
+    const toDefault = sCfg?.to || cfg.to;
+    const matchOpt = [...toSel.options].find(o => o.value === toDefault || o.textContent === toDefault);
+    toSel.value = matchOpt ? matchOpt.value : '';
+    document.getElementById('to-other-wrap') && (document.getElementById('to-other-wrap').style.display = 'none');
+  }
+  // Set approver title dropdown to matching option if exists, else blank
+  const apprTitleSel = document.getElementById('f-appr-title');
+  if(apprTitleSel) {
+    const apprDefault = sCfg?.apprTitle || cfg.apprTitle;
+    const matchOpt = [...apprTitleSel.options].find(o => o.value === apprDefault || o.textContent === apprDefault);
+    apprTitleSel.value = matchOpt ? matchOpt.value : '';
+  }
   const rs = document.getElementById('f-reason');
   rs.innerHTML = '<option value="">— เลือกเหตุผล —</option>';
   (sCfg?.reasons || cfg.reasons).forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; rs.appendChild(o); });
@@ -171,10 +184,10 @@ function _buildAcctRow(email, vals, n) {
   h += `<td style="padding:3px 4px;border:1px solid var(--border);text-align:center"><button class="rm-btn" onclick="this.closest('tr').remove()" style="width:24px;height:24px" title="ลบ">${TRASH}</button></td>`;
   return h;
 }
-function addAcctRow() {
+function addAcctRow(email) {
   const n = getAcctCols().length || 1;
   const tr = document.createElement('tr');
-  tr.innerHTML = _buildAcctRow('', [], n);
+  tr.innerHTML = _buildAcctRow(email||'', [], n);
   document.getElementById('acct-body').appendChild(tr);
 }
 
@@ -323,7 +336,7 @@ async function generateMemoPdf() {
     const saved = saveMemo(data);
     renderPendingMemos();
     await downloadMemoPdf(saved);
-    setNextMemoNo();
+
     alert(`บันทึก ${saved.memoNo} ใน Pending แล้ว และสร้าง PDF เรียบร้อย`);
   } catch(e) {
     console.error(e);
@@ -393,4 +406,28 @@ function saveBulkNames() {
 }
 document.addEventListener('click', e => {
   if(e.target === document.getElementById('bulk-name-modal')) closeBulkNameModal();
+});
+
+// ── Bulk Account Modal ──
+function openBulkAcctModal() {
+  document.getElementById('bulk-acct-input').value = '';
+  document.getElementById('bulk-acct-modal').style.display = 'flex';
+}
+function closeBulkAcctModal() {
+  document.getElementById('bulk-acct-modal').style.display = 'none';
+}
+function saveBulkAcct() {
+  const emails = document.getElementById('bulk-acct-input').value
+    .split('\n').map(l => l.trim()).filter(Boolean);
+  if(!emails.length) { closeBulkAcctModal(); return; }
+  // Get current col values from col header inputs
+  const cols = Array.from(document.querySelectorAll('.acct-col')).map(i => i.value.trim()).filter(Boolean);
+  emails.forEach(email => {
+    addAcctRow(email);
+  });
+  rebuildAcct();
+  closeBulkAcctModal();
+}
+document.addEventListener('click', e => {
+  if(e.target === document.getElementById('bulk-acct-modal')) closeBulkAcctModal();
 });
