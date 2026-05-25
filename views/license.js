@@ -225,6 +225,67 @@ function renderLicense() {
     if(btn.dataset.action==='edit')   openLicenseModal(String(lic.id));
     if(btn.dataset.action==='delete') deleteLicense(String(lic.id));
   };
+
+  // Render seat usage table
+  renderSeatUsageTable(allLicenses);
+}
+
+// ── Seat Usage by Project × Program ──
+function renderSeatUsageTable(licenses) {
+  const thead = document.getElementById('lic-seat-thead');
+  const tbody = document.getElementById('lic-seat-body');
+  if(!thead || !tbody) return;
+
+  // Get all unique programs (dynamic columns)
+  const programs = [...new Set(licenses.map(l => l.name).filter(Boolean))].sort();
+  if(!programs.length) {
+    thead.innerHTML = '<tr><th style="padding-left:16px">Project</th><th>Total Seats</th></tr>';
+    tbody.innerHTML = '<tr><td colspan="2" style="padding:16px;text-align:center;color:var(--text-3)">ยังไม่มี License</td></tr>';
+    return;
+  }
+
+  // Build project × program matrix
+  const projMap = {};
+  licenses.forEach(l => {
+    const proj = l.project || '(ไม่ระบุ)';
+    const prog = l.name;
+    if(!proj || !prog) return;
+    if(!projMap[proj]) projMap[proj] = {};
+    projMap[proj][prog] = (projMap[proj][prog]||0) + (Number(l.seats)||1);
+  });
+
+  // Totals row
+  const progTotals = {};
+  programs.forEach(p => {
+    progTotals[p] = Object.values(projMap).reduce((s, row) => s+(row[p]||0), 0);
+  });
+  const grandTotal = Object.values(projMap).reduce((s, row) =>
+    s + programs.reduce((ss, p) => ss+(row[p]||0), 0), 0);
+
+  // Header
+  const thStyle = 'padding:8px 12px;text-align:center;font-size:11px;font-weight:600;border-bottom:1px solid var(--border)';
+  thead.innerHTML = `<tr>
+    <th style="${thStyle};text-align:left;padding-left:16px">Project</th>
+    ${programs.map(p => `<th style="${thStyle}">${esc(p)}</th>`).join('')}
+    <th style="${thStyle}">Total</th>
+  </tr>`;
+
+  // Rows
+  const projects = Object.keys(projMap).sort();
+  const tdStyle = 'padding:7px 12px;border-bottom:1px solid var(--border);text-align:center;font-size:12px';
+  tbody.innerHTML = projects.map(proj => {
+    const row = projMap[proj];
+    const rowTotal = programs.reduce((s,p) => s+(row[p]||0), 0);
+    return `<tr>
+      <td style="${tdStyle};text-align:left;padding-left:16px;font-weight:500">${esc(proj)}</td>
+      ${programs.map(p => `<td style="${tdStyle}">${row[p] ? `<strong>${row[p]}</strong>` : '<span style="color:var(--text-3)">—</span>'}</td>`).join('')}
+      <td style="${tdStyle};font-weight:700;color:var(--blue)">${rowTotal}</td>
+    </tr>`;
+  }).join('') + `<tr style="background:var(--bg)">
+    <td style="${tdStyle};text-align:left;padding-left:16px;font-weight:600;color:var(--text-2)">Total</td>
+    ${programs.map(p => `<td style="${tdStyle};font-weight:600">${progTotals[p]||'—'}</td>`).join('')}
+    <td style="${tdStyle};font-weight:700;color:var(--blue)">${grandTotal}</td>
+  </tr>`;
 }
 
 // ── Modal ──
