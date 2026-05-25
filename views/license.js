@@ -59,11 +59,11 @@ function getLicenseStatus(lic) {
   const now = new Date();
   const expiry = new Date(lic.expiry);
   const days = Math.floor((expiry - now) / 86400000);
-  if(days < 0)   return { label:'Expired',    badge:'badge-red',   days, key:'expired' };
-  if(days <= 7)  return { label:`⚠ ${days}d`, badge:'badge-red',   days, key:'renew-soon' };
-  if(days <= 14) return { label:`${days}d`,   badge:'badge-amber', days, key:'renew-soon' };
-  if(days <= 30) return { label:`${days}d`,   badge:'badge-amber', days, key:'renew-soon' };
-  return                 { label:'Active',    badge:'badge-green', days, key:'active' };
+  if(days < 0)   return { label:'Expired',  badge:'badge-red',    days, key:'expired' };
+  if(days <= 7)  return { label:`${days}d`, badge:'badge-red',    days, key:'expiring-7' };
+  if(days <= 15) return { label:`${days}d`, badge:'badge-orange', days, key:'expiring-15' };
+  if(days <= 30) return { label:`${days}d`, badge:'badge-amber',  days, key:'expiring-30' };
+  return                 { label:'Active',  badge:'badge-green',  days, key:'active' };
 }
 
 // ── All licenses: memo + manual ──
@@ -117,8 +117,8 @@ function renderLicense() {
   let activeCount=0, renewSoonCount=0, expiredCount=0, monthlyCost=0, annualCost=0;
   allLicenses.forEach(lic => {
     const s = getLicenseStatus(lic);
-    if(s.key==='active')     { activeCount++; monthlyCost += (lic.pricePerMonth||0)*(lic.seats||1); }
-    if(s.key==='renew-soon') { renewSoonCount++; monthlyCost += (lic.pricePerMonth||0)*(lic.seats||1); }
+    if(s.key==='active')                                              { activeCount++; monthlyCost += (lic.pricePerMonth||0)*(lic.seats||1); }
+    if(s.key==='expiring-7'||s.key==='expiring-15'||s.key==='expiring-30') { renewSoonCount++; monthlyCost += (lic.pricePerMonth||0)*(lic.seats||1); }
     if(s.key==='expired')    expiredCount++;
   });
   annualCost = monthlyCost * 12;
@@ -137,31 +137,16 @@ function renderLicense() {
   document.getElementById('lic-annual').textContent   = money(annualCost);
   document.getElementById('lic-renewal-3m').textContent = renewal3m ? `Renewal 3m: ${money(renewal3m)}` : 'ไม่มี renewal ใน 3 เดือน';
 
-  // Alert: 7-day urgent
-  const urgent = allLicenses.filter(l => { const s=getLicenseStatus(l); return s.key==='renew-soon' && s.days!==null && s.days<=7; })
-    .sort((a,b) => new Date(a.expiry)-new Date(b.expiry));
-  const alertSection = document.getElementById('lic-alert-section');
-  const alertList    = document.getElementById('lic-alert-list');
-  alertSection.style.display = urgent.length ? 'block' : 'none';
-  if(urgent.length) {
-    alertList.innerHTML = urgent.map(lic => {
-      const s = getLicenseStatus(lic);
-      return `<div style="background:var(--red-50);border:1px solid var(--red-200);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
-        <span style="font-size:13px;font-weight:600;flex:1">${esc(lic.name)}</span>
-        <span style="font-size:11px;color:var(--text-2)">${esc(lic.project||'-')} · ${esc(lic.owner||'ไม่ระบุ owner')}</span>
-        <span class="badge ${s.badge}">${esc(s.label)}</span>
-        <span style="font-size:11px;color:var(--text-3)">หมดอายุ ${esc(shortDate(lic.expiry))}</span>
-      </div>`;
-    }).join('');
-  }
-
   // Trend chart
   renderLicenseTrend(allLicenses);
 
   // Filter + search
   let filtered = allLicenses.filter(lic => {
     const s = getLicenseStatus(lic);
-    if(filterSt !== 'all' && s.key !== filterSt) return false;
+    if(filterSt !== 'all') {
+      if(filterSt === 'expiring' && !['expiring-7','expiring-15','expiring-30'].includes(s.key)) return false;
+      if(filterSt !== 'expiring' && s.key !== filterSt) return false;
+    }
     if(filterProj !== 'all' && lic.project !== filterProj) return false;
     if(search) {
       const hay = `${lic.name} ${lic.project} ${lic.owner} ${lic.vendor} ${lic.department}`.toLowerCase();
@@ -171,6 +156,7 @@ function renderLicense() {
   });
 
   // Sort
+  const EXPIRING_KEYS = new Set(['expiring-7','expiring-15','expiring-30']);
   filtered.sort((a,b) => {
     if(sort==='cost-desc')     return ((b.pricePerMonth||0)*(b.seats||1)) - ((a.pricePerMonth||0)*(a.seats||1));
     if(sort==='seats-desc')    return (b.seats||1)-(a.seats||1);
@@ -193,8 +179,6 @@ function renderLicense() {
   tbody.innerHTML = filtered.map((lic, _idx) => {
     const s = getLicenseStatus(lic);
     const monthlyCostLic = (lic.pricePerMonth||0)*(lic.seats||1);
-    const reminderBadge = s.days!==null && s.days<=30 && s.days>=0
-      ? `<span class="badge badge-amber" style="font-size:9px;margin-left:4px">${s.days<=7?'⚠ ':''} ${s.days}d</span>` : '';
     return `<tr>
       <td style="padding-left:16px;font-weight:600">
         ${esc(lic.name)}
@@ -207,8 +191,8 @@ function renderLicense() {
       <td style="font-size:12px">${esc(lic.department||'—')}</td>
       <td style="font-size:12px">${esc(lic.project||'—')}</td>
       <td style="font-size:11px">${esc(shortDate(lic.purchaseDate))}</td>
-      <td style="font-size:11px">${esc(shortDate(lic.expiry))}${reminderBadge}</td>
-      <td style="text-align:center"><span class="badge ${s.badge}">${esc(s.key==='renew-soon'?'Renew Soon':s.key==='expired'?'Expired':s.key==='cancelled'?'Cancelled':'Active')}</span></td>
+      <td style="font-size:11px">${esc(shortDate(lic.expiry))}</td>
+      <td style="text-align:center"><span class="badge ${s.badge}">${esc(s.label)}</span></td>
       <td style="text-align:center;white-space:nowrap">
         <button class="btn-sm" data-action="edit" data-idx="${_idx}" style="padding:3px 7px;font-size:11px" title="Edit">✎</button>
         ${lic.source!=='memo'?`<button class="btn-sm" data-action="delete" data-idx="${_idx}" style="padding:3px 7px;font-size:11px;color:var(--red)" title="Delete">✕</button>`:''}
@@ -226,65 +210,76 @@ function renderLicense() {
     if(btn.dataset.action==='delete') deleteLicense(String(lic.id));
   };
 
-  // Render seat usage table
-  renderSeatUsageTable(allLicenses);
+  // Render cost breakdown table
+  renderCostBreakdownTable(allLicenses);
 }
 
-// ── Seat Usage by Project × Program ──
-function renderSeatUsageTable(licenses) {
+// ── Cost Breakdown by Project × Software ──
+function renderCostBreakdownTable(licenses) {
   const thead = document.getElementById('lic-seat-thead');
   const tbody = document.getElementById('lic-seat-body');
+  const title = document.getElementById('lic-breakdown-title');
   if(!thead || !tbody) return;
 
-  // Get all unique programs (dynamic columns)
-  const programs = [...new Set(licenses.map(l => l.name).filter(Boolean))].sort();
-  if(!programs.length) {
-    thead.innerHTML = '<tr><th style="padding-left:16px">Project</th><th>Total Seats</th></tr>';
+  if(title) title.textContent = 'Cost Breakdown by Project × Software (Monthly THB)';
+
+  // Get all unique software names (columns)
+  const softwares = [...new Set(licenses.map(l => l.name).filter(Boolean))].sort();
+  if(!softwares.length) {
+    thead.innerHTML = '<tr><th style="padding-left:16px">Project</th><th>Total Cost</th></tr>';
     tbody.innerHTML = '<tr><td colspan="2" style="padding:16px;text-align:center;color:var(--text-3)">ยังไม่มี License</td></tr>';
     return;
   }
 
-  // Build project × program matrix
+  // Build project × software matrix (seats + monthly cost)
   const projMap = {};
   licenses.forEach(l => {
     const proj = l.project || '(ไม่ระบุ)';
-    const prog = l.name;
-    if(!proj || !prog) return;
+    const sw   = l.name;
+    if(!sw) return;
     if(!projMap[proj]) projMap[proj] = {};
-    projMap[proj][prog] = (projMap[proj][prog]||0) + (Number(l.seats)||1);
+    if(!projMap[proj][sw]) projMap[proj][sw] = { seats: 0, cost: 0 };
+    projMap[proj][sw].seats += Number(l.seats)||1;
+    projMap[proj][sw].cost  += (Number(l.pricePerMonth)||0) * (Number(l.seats)||1);
   });
 
-  // Totals row
-  const progTotals = {};
-  programs.forEach(p => {
-    progTotals[p] = Object.values(projMap).reduce((s, row) => s+(row[p]||0), 0);
+  // Column totals
+  const swTotals = {};
+  softwares.forEach(sw => {
+    swTotals[sw] = Object.values(projMap).reduce((s, row) => s + (row[sw]?.cost||0), 0);
   });
-  const grandTotal = Object.values(projMap).reduce((s, row) =>
-    s + programs.reduce((ss, p) => ss+(row[p]||0), 0), 0);
+  const grandTotal = Object.values(swTotals).reduce((s,v)=>s+v, 0);
 
   // Header
-  const thStyle = 'padding:8px 12px;text-align:center;font-size:11px;font-weight:600;border-bottom:1px solid var(--border)';
+  const thS = 'padding:8px 12px;text-align:center;font-size:11px;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap';
   thead.innerHTML = `<tr>
-    <th style="${thStyle};text-align:left;padding-left:16px">Project</th>
-    ${programs.map(p => `<th style="${thStyle}">${esc(p)}</th>`).join('')}
-    <th style="${thStyle}">Total</th>
+    <th style="${thS};text-align:left;padding-left:16px">Project</th>
+    ${softwares.map(sw => `<th style="${thS}">${esc(sw)}</th>`).join('')}
+    <th style="${thS}">Total/เดือน</th>
   </tr>`;
 
   // Rows
   const projects = Object.keys(projMap).sort();
-  const tdStyle = 'padding:7px 12px;border-bottom:1px solid var(--border);text-align:center;font-size:12px';
+  const tdS = 'padding:7px 12px;border-bottom:1px solid var(--border);font-size:12px;text-align:center';
   tbody.innerHTML = projects.map(proj => {
     const row = projMap[proj];
-    const rowTotal = programs.reduce((s,p) => s+(row[p]||0), 0);
+    const rowTotal = softwares.reduce((s,sw) => s+(row[sw]?.cost||0), 0);
     return `<tr>
-      <td style="${tdStyle};text-align:left;padding-left:16px;font-weight:500">${esc(proj)}</td>
-      ${programs.map(p => `<td style="${tdStyle}">${row[p] ? `<strong>${row[p]}</strong>` : '<span style="color:var(--text-3)">—</span>'}</td>`).join('')}
-      <td style="${tdStyle};font-weight:700;color:var(--blue)">${rowTotal}</td>
+      <td style="${tdS};text-align:left;padding-left:16px;font-weight:500">${esc(proj)}</td>
+      ${softwares.map(sw => {
+        const d = row[sw];
+        if(!d) return `<td style="${tdS};color:var(--text-3)">—</td>`;
+        return `<td style="${tdS}">
+          <div style="font-weight:600">${money(d.cost)}</div>
+          <div style="font-size:10px;color:var(--text-3)">${d.seats} seat${d.seats>1?'s':''}</div>
+        </td>`;
+      }).join('')}
+      <td style="${tdS};font-weight:700;color:var(--blue)">${money(rowTotal)}</td>
     </tr>`;
   }).join('') + `<tr style="background:var(--bg)">
-    <td style="${tdStyle};text-align:left;padding-left:16px;font-weight:600;color:var(--text-2)">Total</td>
-    ${programs.map(p => `<td style="${tdStyle};font-weight:600">${progTotals[p]||'—'}</td>`).join('')}
-    <td style="${tdStyle};font-weight:700;color:var(--blue)">${grandTotal}</td>
+    <td style="${tdS};text-align:left;padding-left:16px;font-weight:600;color:var(--text-2)">Total</td>
+    ${softwares.map(sw => `<td style="${tdS};font-weight:600">${swTotals[sw] ? money(swTotals[sw]) : '—'}</td>`).join('')}
+    <td style="${tdS};font-weight:700;color:var(--blue)">${money(grandTotal)}</td>
   </tr>`;
 }
 
