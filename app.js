@@ -294,6 +294,7 @@ function swView(id, el, title) {
   if(id === 'history') renderHistoryMemos();
   if(id === 'settings') { if(typeof renderSettings==='function') renderSettings(); }
   if(id === 'resource') { if(typeof renderResource==='function') renderResource(); }
+  if(id === 'cost') { if(typeof renderCost==='function') renderCost(); }
 }
 function toggleMemoSub(el) {
   el.classList.add('active');
