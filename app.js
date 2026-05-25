@@ -535,7 +535,7 @@ function initApp() {
   ['f-date','f-signdate','f-apprdate','sl-ratedate'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = todayISO;
   });
-  setNextMemoNo();
+
   renderPendingMemos();
   renderHistoryMemos();
   rebuildAcct();
@@ -544,7 +544,7 @@ function initApp() {
   loadMemosAsync().then(() => {
     renderPendingMemos();
     renderHistoryMemos();
-    setNextMemoNo();
+  
   }).catch(e => console.warn('Supabase init load failed', e));
   // Load settings and refresh all dropdowns
   if(typeof initSettings === 'function') initSettings();
