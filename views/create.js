@@ -149,13 +149,35 @@ function selectedReason() {
 }
 function memoSubject(data) {
   if(data.subject) return data.subject;
-  const p = data.project ? `โครงการ ${data.project}` : 'โครงการ';
-  return ({ sl:`ขออนุมัติจัดซื้อ Software License สำหรับ${p}`,
-            hw:`ขออนุมัติจัดซื้อ Hardware สำหรับ${p}`,
-            int:`ขออนุมัติค่าใช้จ่าย Team Activity สำหรับ${p}`,
-            ent:`ขออนุมัติค่าใช้จ่ายรับรองลูกค้าสำหรับ${p}`,
-            dep:`ขออนุมัติค่าใช้จ่าย Deployment สำหรับ${p}` }[data.type]) || 'ขออนุมัติ Memo';
+  const p = data.project || 'โครงการ';
+  switch(data.type) {
+    case 'sl':  return `ขออนุมัติงบประมาณเพื่อการจัดซื้อโปรแกรมสำหรับการพัฒนาในโครงการ ${p} โดยชำระเงินผ่านบัตรเครดิตบริษัท Orbit Digital 0321`;
+    case 'hw': {
+      const hwFirst = document.querySelector('#fs-hw .hw-rows input[type="text"]')?.value?.trim() || 'Hardware';
+      return `ขออนุมัติงบประมาณค่าใช้จ่ายเพื่อจัดซื้อ${hwFirst} สำหรับโครงการ ${p}`;
+    }
+    case 'int': return `ขออนุมัติงบประมาณจัดกิจกรรมของทีม ${p}`;
+    case 'ent': {
+      const client = document.querySelector('#fs-ent input')?.value?.trim() || 'ลูกค้า';
+      return `ขออนุมัติงบประมาณค่าใช้จ่ายเลี้ยงรับรองลูกค้า ${client}`;
+    }
+    case 'dep': {
+      const depInp = document.querySelectorAll('#fs-dep input');
+      const start = depInp[0]?.value ? dateInput(depInp[0].value) : 'วันที่เริ่ม';
+      const end   = depInp[1]?.value ? dateInput(depInp[1].value) : 'วันที่สิ้นสุด';
+      return `ขออนุมัติงบประมาณค่าใช้จ่ายสำหรับพนักงานที่ปฏิบัติการ Deployment ของ ${p} ในวันที่ ${start} – ${end}`;
+    }
+    default: return 'ขออนุมัติ Memo';
+  }
 }
+
+// Auto-update subject field when key inputs change
+function updateSubjectPreview() {
+  const subjectEl = document.getElementById('f-subject');
+  if(!subjectEl || subjectEl.dataset.manualEdit === 'true') return;
+  subjectEl.placeholder = memoSubject({ type: selectedType, project: val('#f-project')==='other' ? val('#f-project-other') : val('#f-project') });
+}
+
 function collectMemoData() {
   const revCard = document.querySelector('#rev-num')?.closest('.card');
   // Filter out requester fields to avoid index shift after adding them
@@ -166,14 +188,16 @@ function collectMemoData() {
     type: selectedType, typeLabel: TYPE_LABELS[selectedType]||'-',
     memoNo: val('#f-memo-no'), date: dateInput(val('#f-date')),
     project: val('#f-project')==='other' ? val('#f-project-other') : val('#f-project'),
-    to: val('#f-to'), subject: val('#f-subject'), reason: selectedReason(),
+    to: val('#f-to'), subject: '', reason: selectedReason(),
     reviewerName: revInputs[0]||'-', reviewerTitle: revInputs[1]||'-',
     reviewerDate: dateInput(revInputs[2]) || TODAY,
     approverName: revInputs[3]||'-', approverTitle: revInputs[4]||'-',
     approverDate: dateInput(revInputs[5]) || TODAY,
     sections: [], total: 0, amountWords: ''
   };
-  data.subject = memoSubject(data);
+  // Use typed subject if user filled it, else auto-generate from current form state
+  const typedSubject = val('#f-subject')?.trim();
+  data.subject = typedSubject || memoSubject(data);
   if(data.type==='sl') {
     const rows = Array.from(document.querySelectorAll('#sl-rows .item-row')).map((row,i) => {
       const inp = row.querySelectorAll('input');
