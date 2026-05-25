@@ -75,7 +75,7 @@ function renderCost() {
   const projData = allProjects.map(proj => {
     const licCost  = Object.values(licByProj[proj]||{}).reduce((s,v)=>s+v,0);
     const infraCost= Object.values(infraCosts[proj]||{}).reduce((s,v)=>s+v,0);
-    const budgetAmt= Object.values(costBudgets[proj]||{}).reduce((s,v)=>s+v,0);
+    const budgetAmt= Number(costBudgets[proj]?.total||0);
     totalLicense += licCost;
     totalInfra   += infraCost;
     totalBudget  += budgetAmt;
