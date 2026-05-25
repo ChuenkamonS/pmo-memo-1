@@ -652,10 +652,26 @@ body {
   background: transparent;
   color: var(--text-2);
   cursor: pointer;
-  transition: background .15s, color .15s;
-  margin-bottom: -1px;
+  transition: color .15s;
   position: relative;
+  top: 1px;
 }
 .cost-stab:hover { color: var(--text); background: var(--bg); border-color: var(--border-md); }
-.cost-stab.active { background: var(--surface); color: var(--blue); font-weight: 600; border-color: var(--border-md); border-bottom-color: var(--surface); z-index: 2; }
-.cost-tab-panel { border: 1px solid var(--border-md); border-radius: 0 var(--r-sm) var(--r-sm) var(--r-sm); padding: 14px; background: var(--surface); margin-bottom: 14px; }
+.cost-stab.active {
+  background: var(--surface);
+  color: var(--blue);
+  font-weight: 600;
+  border: 1px solid var(--border-md);
+  border-bottom: 2px solid #FFFFFF;
+  z-index: 2;
+}
+.cost-tab-panel {
+  border: 1px solid var(--border-md);
+  border-top: none;
+  border-radius: 0 var(--r-sm) var(--r-sm) var(--r-sm);
+  padding: 14px;
+  background: var(--surface);
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+}
