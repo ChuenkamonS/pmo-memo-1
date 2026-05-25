@@ -59,15 +59,26 @@ function selectType(type, btn) {
   rs.innerHTML = '<option value="">— เลือกเหตุผล —</option>';
   (sCfg?.reasons || cfg.reasons).forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; rs.appendChild(o); });
   rs.innerHTML += '<option value="other">อื่นๆ (กรอกเอง)</option>';
-  // Apply default reviewer/approver
+  // Apply default reviewer/approver from settings
   if(s?.defaultReviewer?.name) {
-    const revInputEls = document.querySelector('#rev-num')?.closest('.card')
-      ? Array.from(document.querySelector('#rev-num').closest('.card').querySelectorAll('input[type="text"],input[type="date"]'))
-          .filter(el => el.id !== 'f-requester-name' && el.id !== 'f-requester-title')
-      : [];
-    if(revInputEls[0] && !revInputEls[0].value) revInputEls[0].value = s.defaultReviewer.name;
-    if(revInputEls[1] && !revInputEls[1].value) revInputEls[1].value = s.defaultReviewer.title || '';
-    if(revInputEls[3] && !revInputEls[3].value && s.defaultApprover?.name) revInputEls[3].value = s.defaultApprover.name;
+    const revNameSel = document.getElementById('f-reviewer-name');
+    if(revNameSel && !revNameSel.value) {
+      // Check if name exists in options
+      const opt = [...revNameSel.options].find(o => o.value === s.defaultReviewer.name);
+      if(opt) revNameSel.value = s.defaultReviewer.name;
+    }
+    const revTitleSel = document.getElementById('f-reviewer-title');
+    if(revTitleSel && !revTitleSel.value && s.defaultReviewer.title) {
+      const opt = [...revTitleSel.options].find(o => o.value === s.defaultReviewer.title);
+      if(opt) revTitleSel.value = s.defaultReviewer.title;
+    }
+    if(s.defaultApprover?.name) {
+      const apprNameSel = document.getElementById('f-approver-name');
+      if(apprNameSel && !apprNameSel.value) {
+        const opt = [...apprNameSel.options].find(o => o.value === s.defaultApprover.name);
+        if(opt) apprNameSel.value = s.defaultApprover.name;
+      }
+    }
   }
   document.getElementById('form-hint').style.display = 'none';
   document.getElementById('form-body').style.display = 'block';
@@ -204,20 +215,31 @@ function updateSubjectPreview() {
 }
 
 function collectMemoData() {
-  const revCard = document.querySelector('#rev-num')?.closest('.card');
-  // Filter out requester fields to avoid index shift after adding them
-  const revInputEls = revCard ? Array.from(revCard.querySelectorAll('input[type="text"], input[type="date"]'))
-    .filter(el => el.id !== 'f-requester-name' && el.id !== 'f-requester-title') : [];
-  const revInputs = revInputEls.map(i => i.value.trim());
+  // Read "เรียน" from dropdown or other input
+  const toSel = document.getElementById('f-to');
+  const toVal = toSel?.value === 'other' ? (val('#f-to-other') || '') : (toSel?.value || '');
+
+  // Read reviewer name/title from dropdowns
+  const revNameSel = document.getElementById('f-reviewer-name');
+  const revName = revNameSel?.value === 'other' ? (val('#f-reviewer-name-other') || '') : (revNameSel?.value || '');
+  const revTitleSel = document.getElementById('f-reviewer-title');
+  const revTitle = revTitleSel?.value === 'other' ? (val('#f-reviewer-title-other') || '') : (revTitleSel?.value || '');
+
+  // Read approver name/title from dropdowns
+  const apprNameSel = document.getElementById('f-approver-name');
+  const apprName = apprNameSel?.value === 'other' ? (val('#f-approver-name-other') || '') : (apprNameSel?.value || '');
+  const apprTitleSel = document.getElementById('f-appr-title');
+  const apprTitle = apprTitleSel?.value === 'other' ? (val('#f-appr-title-other') || '') : (apprTitleSel?.value || '');
+
   const data = {
     type: selectedType, typeLabel: TYPE_LABELS[selectedType]||'-',
     memoNo: val('#f-memo-no'), date: dateInput(val('#f-date')),
     project: val('#f-project')==='other' ? val('#f-project-other') : val('#f-project'),
-    to: val('#f-to'), subject: '', reason: selectedReason(),
-    reviewerName: revInputs[0]||'-', reviewerTitle: revInputs[1]||'-',
-    reviewerDate: dateInput(revInputs[2]) || TODAY,
-    approverName: revInputs[3]||'-', approverTitle: revInputs[4]||'-',
-    approverDate: dateInput(revInputs[5]) || TODAY,
+    to: toVal, subject: '', reason: selectedReason(),
+    reviewerName: revName || '-', reviewerTitle: revTitle || '-',
+    reviewerDate: dateInput(val('#f-signdate')) || TODAY,
+    approverName: apprName || '-', approverTitle: apprTitle || '-',
+    approverDate: dateInput(val('#f-apprdate')) || TODAY,
     sections: [], total: 0, amountWords: ''
   };
   // Use typed subject if user filled it, else auto-generate from current form state
@@ -311,3 +333,64 @@ async function generateMemoPdf() {
 function resetMemoForm() {
   if(confirm('ล้างข้อมูลที่กรอกหรือไม่?')) location.reload();
 }
+
+// ── Dropdown toggle helpers ──
+function toggleToOther() {
+  const sel = document.getElementById('f-to');
+  const wrap = document.getElementById('to-other-wrap');
+  if(wrap) wrap.style.display = sel?.value === 'other' ? 'block' : 'none';
+}
+function toggleReviewerNameOther() {
+  const sel = document.getElementById('f-reviewer-name');
+  const el  = document.getElementById('f-reviewer-name-other');
+  if(el) el.style.display = sel?.value === 'other' ? 'block' : 'none';
+}
+function toggleReviewerTitleOther() {
+  const sel = document.getElementById('f-reviewer-title');
+  const el  = document.getElementById('f-reviewer-title-other');
+  if(el) el.style.display = sel?.value === 'other' ? 'block' : 'none';
+}
+function toggleApproverNameOther() {
+  const sel = document.getElementById('f-approver-name');
+  const el  = document.getElementById('f-approver-name-other');
+  if(el) el.style.display = sel?.value === 'other' ? 'block' : 'none';
+}
+function toggleApproverTitleOther() {
+  const sel = document.getElementById('f-appr-title');
+  const el  = document.getElementById('f-appr-title-other');
+  if(el) el.style.display = sel?.value === 'other' ? 'block' : 'none';
+}
+
+// ── Bulk Name Modal ──
+let _bulkTargetId = '', _bulkCls = '', _bulkCalc = false;
+function openBulkNameModal(containerId, cls, doCalc) {
+  _bulkTargetId = containerId;
+  _bulkCls = cls;
+  _bulkCalc = doCalc;
+  document.getElementById('bulk-name-input').value = '';
+  document.getElementById('bulk-name-modal').style.display = 'flex';
+}
+function closeBulkNameModal() {
+  document.getElementById('bulk-name-modal').style.display = 'none';
+}
+function saveBulkNames() {
+  const lines = document.getElementById('bulk-name-input').value
+    .split('\n').map(l => l.trim()).filter(Boolean);
+  if(!lines.length) { closeBulkNameModal(); return; }
+  lines.forEach(name => {
+    const container = document.getElementById(_bulkTargetId);
+    if(!container) return;
+    const n = container.querySelectorAll('.' + _bulkCls).length + 1;
+    const d = document.createElement('div');
+    d.className = 'row-name';
+    const calcAttr = _bulkCalc ? ` oninput="calcINT()"` : '';
+    const calcCall = _bulkCalc ? `;calcINT()` : '';
+    d.innerHTML = `<span class="name-num">${n}.</span><input class="ri ${_bulkCls}" type="text" value="${esc(name)}"${calcAttr}><button class="rm-btn" onclick="rmName(this,'${_bulkTargetId}')${calcCall}" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
+    container.appendChild(d);
+  });
+  if(_bulkCalc) calcINT();
+  closeBulkNameModal();
+}
+document.addEventListener('click', e => {
+  if(e.target === document.getElementById('bulk-name-modal')) closeBulkNameModal();
+});
