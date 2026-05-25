@@ -1446,47 +1446,51 @@ svg.icon { display: inline-block; vertical-align: middle; }
       <div id="view-cost" class="view">
 
         <!-- KPI -->
+        <!-- KPI Cards (always visible) -->
         <div class="metric-row" id="cost-kpi" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px"></div>
 
-        <!-- Action buttons -->
-        <div style="display:flex;gap:8px;margin-bottom:14px;justify-content:flex-end">
-          <button class="btn-sm" onclick="openBudgetCostModal()" style="font-size:12px;padding:6px 12px">
-            📊 Set Annual Budget
-          </button>
-          <button class="btn-primary" onclick="openInfraModal()" style="font-size:12px">
-            + Add Infra Cost
-          </button>
-        </div>
-
-        <!-- Cost by Project -->
-        <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
-          <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600">
-            Cost by Project (Monthly)
+        <!-- Sub-tab bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+          <div style="display:flex;gap:2px" id="cost-subtab-bar">
+            <button class="cost-stab active" data-tab="overview" onclick="switchCostTab('overview',this)">Overview</button>
+            <button class="cost-stab" data-tab="infra" onclick="switchCostTab('infra',this)">Infra Cost</button>
+            <button class="cost-stab" data-tab="forecast" onclick="switchCostTab('forecast',this)">Forecast</button>
           </div>
-          <table class="hist-table">
-            <thead><tr>
-              <th style="padding-left:14px">Project</th>
-              <th>License (฿)</th>
-              <th>Infra (฿)</th>
-              <th>Total/Mo (฿)</th>
-              <th>Budget/Mo (฿)</th>
-              <th>Year-End Forecast (฿)</th>
-              <th style="text-align:center">Utilization</th>
-            </tr></thead>
-            <tbody id="cost-proj-body"></tbody>
-          </table>
+          <!-- Action buttons move here, shown per tab -->
+          <div id="cost-tab-actions" style="display:flex;gap:8px"></div>
         </div>
 
-        <!-- Chart + Infra breakdown side by side -->
-        <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px">
-          <div class="card" style="padding:16px">
+        <!-- ── Sub-tab: Overview ── -->
+        <div id="cost-tab-overview" class="cost-tab-panel">
+          <!-- Chart -->
+          <div class="card" style="padding:16px;margin-bottom:14px">
             <div style="font-size:12px;font-weight:600;margin-bottom:12px">Monthly Actual vs Budget vs Forecast</div>
             <div style="height:220px"><canvas id="cost-chart"></canvas></div>
           </div>
+          <!-- Cost by Project table -->
           <div class="card" style="padding:0;overflow:hidden">
-            <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:12px;font-weight:600">Infra Cost by Program × Project</div>
+            <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600">Cost by Project (Monthly)</div>
+            <div style="overflow-x:auto">
+              <table class="hist-table">
+                <thead><tr>
+                  <th style="padding-left:14px">Project</th>
+                  <th>License (฿)</th>
+                  <th>Infra (฿)</th>
+                  <th>Total/Mo (฿)</th>
+                  <th>Budget/Mo (฿)</th>
+                  <th>Year-End Forecast (฿)</th>
+                  <th style="text-align:center">Utilization</th>
+                </tr></thead>
+                <tbody id="cost-proj-body"></tbody>
+              </table>
             </div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Infra Cost ── -->
+        <div id="cost-tab-infra" class="cost-tab-panel" style="display:none">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600">Infra Cost by Program × Project</div>
             <div style="overflow-x:auto">
               <table class="hist-table">
                 <thead id="cost-infra-thead"></thead>
@@ -1495,6 +1499,28 @@ svg.icon { display: inline-block; vertical-align: middle; }
             </div>
           </div>
         </div>
+
+        <!-- ── Sub-tab: Forecast ── -->
+        <div id="cost-tab-forecast" class="cost-tab-panel" style="display:none">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:12px;font-weight:600">Year-End Forecast by Project × Program</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select id="forecast-filter-proj" onchange="renderForecast()" style="font-family:inherit;font-size:12px;padding:4px 8px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
+                  <option value="all">ทุกโครงการ</option>
+                </select>
+                <button class="btn-sm" onclick="exportForecastCsv()" style="font-size:12px;padding:5px 10px">⬇ Export CSV</button>
+              </div>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="hist-table">
+                <thead id="forecast-thead"></thead>
+                <tbody id="forecast-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Cost: Infra Input Modal -->
