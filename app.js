@@ -483,7 +483,7 @@ const LOGO_B64 = 'data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BS
 async function downloadMemoPdf(data) {
   const stage = document.getElementById('pdf-stage');
   stage.innerHTML = renderMemoPdf(data);
-  // File naming: [TYPE]_[MemoNo]_[Project]_[Extra]_[Date].Ver1.0.0.docx
+  // File naming: [TYPE]_[MemoNo]_[Project]_[Extra]_[Date].Ver1.0.0
   const typeTag = ({ sl:'SL', hw:'HW', int:'INT', ent:'EXT', dep:'DEP' }[data.type] || data.type?.toUpperCase() || 'MEMO');
   const proj    = (data.project || '').replace(/\s+/g,'');
   const memoNo  = (data.memoNo  || 'memo').replace(/\s+/g,'');
@@ -496,7 +496,7 @@ async function downloadMemoPdf(data) {
     extra = firstSL ? '_' + firstSL.replace(/\s+/g,'') : '';
   }
 
-  const filename = `[${typeTag}]_${memoNo}_${proj}${extra}_${dateStr}.Ver1.0.0.docx`;
+  const filename = `[${typeTag}]_${memoNo}_${proj}${extra}_${dateStr}.Ver1.0.0.pdf`;
   async function fetchWithRetry(url, opts, ms=55000, retries=2) {
     for(let i=0; i<=retries; i++) {
       const ctrl = new AbortController();
