@@ -18,6 +18,31 @@ const TYPE_CFG = {
 };
 
 function selectType(type, btn) {
+  // If already have a type selected, confirm before clearing
+  if(selectedType && selectedType !== type) {
+    if(!confirm('การเปลี่ยนประเภท Memo จะล้างข้อมูลที่กรอกไว้ทั้งหมด\nต้องการดำเนินการต่อไหม?')) return;
+    // Clear all form fields
+    document.querySelectorAll('#form-body input[type="text"], #form-body input[type="number"], #form-body input[type="date"], #form-body textarea').forEach(el => { el.value = ''; });
+    document.querySelectorAll('#form-body select').forEach(el => { el.selectedIndex = 0; });
+    // Reset subject manual edit flag
+    const subjectEl = document.getElementById('f-subject');
+    if(subjectEl) { subjectEl.value = ''; subjectEl.dataset.manualEdit = 'false'; }
+    // Reset SL/HW rows to single empty row
+    const slRows = document.getElementById('sl-rows');
+    if(slRows) { slRows.innerHTML = ''; addSLRow(); }
+    const hwRows = document.getElementById('hw-rows');
+    if(hwRows) { hwRows.innerHTML = ''; addHWRow(); }
+    // Reset name lists
+    ['int-names','dep-names','ent-names'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.innerHTML = '';
+    });
+    // Reset totals
+    ['sl-total','hw-total','int-total','ent-total','dep-total'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = '฿0';
+    });
+  }
   selectedType = type;
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
