@@ -198,6 +198,14 @@ function renderCost() {
 
   // ── Render Chart ──
   renderCostChart(totalLicense, totalInfra, totalBudget);
+
+  // Init action buttons for default tab (overview)
+  const actions = document.getElementById('cost-tab-actions');
+  if(actions && !actions.hasChildNodes()) {
+    actions.innerHTML = `
+      <button class="btn-sm" onclick="openBudgetCostModal()" style="font-size:12px;padding:6px 12px">📊 Set Annual Budget</button>
+      <button class="btn-primary" onclick="openInfraModal()" style="font-size:12px;padding:6px 14px">+ Add Infra Cost</button>`;
+  }
 }
 
 function renderCostChart(license, infra, budget) {
@@ -380,3 +388,179 @@ document.addEventListener('click', e => {
   if(e.target === document.getElementById('infra-modal')) closeInfraModal();
   if(e.target === document.getElementById('budget-cost-modal')) closeBudgetCostModal();
 });
+
+// ── Sub-tab switching ──
+function switchCostTab(tab, btn) {
+  document.querySelectorAll('.cost-tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.cost-stab').forEach(b => b.classList.remove('active'));
+  document.getElementById('cost-tab-' + tab).style.display = '';
+  btn.classList.add('active');
+
+  // Per-tab action buttons
+  const actions = document.getElementById('cost-tab-actions');
+  if(tab === 'overview') {
+    actions.innerHTML = `
+      <button class="btn-sm" onclick="openBudgetCostModal()" style="font-size:12px;padding:6px 12px">📊 Set Annual Budget</button>
+      <button class="btn-primary" onclick="openInfraModal()" style="font-size:12px;padding:6px 14px">+ Add Infra Cost</button>`;
+  } else if(tab === 'infra') {
+    actions.innerHTML = `
+      <button class="btn-primary" onclick="openInfraModal()" style="font-size:12px;padding:6px 14px">+ Add Infra Cost</button>`;
+  } else if(tab === 'forecast') {
+    actions.innerHTML = `
+      <button class="btn-sm" onclick="exportForecastCsv()" style="font-size:12px;padding:6px 12px">⬇ Export CSV</button>`;
+    renderForecast();
+  }
+}
+
+// ── Forecast Tab ──
+function renderForecast() {
+  const infraCosts  = loadInfraCosts();
+  const licByProj   = getLicenseCostByProject();
+  const filterProj  = document.getElementById('forecast-filter-proj')?.value || 'all';
+
+  // Build unified data: { project: { program: { type, monthly } } }
+  const data = {};
+
+  // Infra sources
+  Object.entries(infraCosts).forEach(([proj, programs]) => {
+    if(!data[proj]) data[proj] = {};
+    Object.entries(programs).forEach(([prog, monthly]) => {
+      data[proj][prog] = { type: 'Infra', monthly: Number(monthly)||0 };
+    });
+  });
+
+  // License (SL) sources
+  if(typeof getAllLicenses === 'function') {
+    getAllLicenses().forEach(l => {
+      const proj = l.project || '(ไม่ระบุ)';
+      const prog = l.name || 'License';
+      const monthly = (Number(l.pricePerMonth)||0) * (Number(l.seats)||1);
+      if(!monthly) return;
+      if(!data[proj]) data[proj] = {};
+      if(!data[proj][prog]) data[proj][prog] = { type: 'License', monthly: 0 };
+      data[proj][prog].monthly += monthly;
+    });
+  }
+
+  // All projects
+  let allProjects = Object.keys(data).sort();
+
+  // Update project filter dropdown
+  const sel = document.getElementById('forecast-filter-proj');
+  if(sel) {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="all">ทุกโครงการ</option>' +
+      allProjects.map(p => `<option value="${esc(p)}" ${p===cur?'selected':''}>${esc(p)}</option>`).join('');
+  }
+
+  if(filterProj !== 'all') allProjects = allProjects.filter(p => p === filterProj);
+
+  const thead = document.getElementById('forecast-thead');
+  const tbody = document.getElementById('forecast-body');
+  if(!thead || !tbody) return;
+
+  if(!allProjects.length) {
+    thead.innerHTML = '';
+    tbody.innerHTML = `<tr><td colspan="16" style="padding:24px;text-align:center;color:var(--text-3)">ยังไม่มีข้อมูล</td></tr>`;
+    return;
+  }
+
+  const thS = 'padding:7px 10px;font-size:11px;font-weight:600;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap';
+  thead.innerHTML = `<tr>
+    <th style="${thS};text-align:left;padding-left:14px">Project</th>
+    <th style="${thS};text-align:left">Program</th>
+    <th style="${thS};text-align:center">Type</th>
+    ${MONTHS.map(m => `<th style="${thS}">${m}</th>`).join('')}
+    <th style="${thS};color:var(--blue)">Total</th>
+  </tr>`;
+
+  const tdS = 'padding:6px 10px;border-bottom:1px solid var(--border);font-size:11px;text-align:right';
+  let rows = '';
+  let grandTotal = 0;
+  const grandMonthly = new Array(12).fill(0);
+
+  allProjects.forEach(proj => {
+    const programs = Object.entries(data[proj]).sort((a,b) => b[1].monthly - a[1].monthly);
+    const projMonthly = new Array(12).fill(0);
+    let projTotal = 0;
+
+    // Program rows
+    programs.forEach(([prog, d], i) => {
+      const yearTotal = d.monthly * 12;
+      projTotal += yearTotal;
+      MONTHS.forEach((_, mi) => { projMonthly[mi] += d.monthly; grandMonthly[mi] += d.monthly; });
+      grandTotal += yearTotal;
+
+      const typeBadge = d.type === 'Infra'
+        ? `<span class="badge badge-blue" style="font-size:9px">Infra</span>`
+        : `<span class="badge badge-green" style="font-size:9px">License</span>`;
+
+      rows += `<tr style="background:${i%2===0?'var(--surface)':'var(--bg)'}">
+        <td style="${tdS};text-align:left;padding-left:14px;color:var(--text-3);font-size:10px">${i===0?esc(proj):''}</td>
+        <td style="${tdS};text-align:left;font-weight:500">${esc(prog)}</td>
+        <td style="${tdS};text-align:center">${typeBadge}</td>
+        ${MONTHS.map(() => `<td style="${tdS}">${money(d.monthly)}</td>`).join('')}
+        <td style="${tdS};font-weight:600;color:var(--blue)">${money(yearTotal)}</td>
+      </tr>`;
+    });
+
+    // Project subtotal row
+    rows += `<tr style="background:var(--bg-2,#f0f4f8)">
+      <td style="${tdS};text-align:left;padding-left:14px;font-weight:700" colspan="2">${esc(proj)} — Subtotal</td>
+      <td style="${tdS}"></td>
+      ${projMonthly.map(v => `<td style="${tdS};font-weight:600">${money(v)}</td>`).join('')}
+      <td style="${tdS};font-weight:700;color:var(--blue)">${money(projTotal)}</td>
+    </tr>
+    <tr><td colspan="16" style="height:6px;background:var(--bg)"></td></tr>`;
+  });
+
+  // Grand total row
+  rows += `<tr style="background:var(--bg)">
+    <td style="${tdS};text-align:left;padding-left:14px;font-weight:700;color:var(--text)" colspan="2">Grand Total</td>
+    <td style="${tdS}"></td>
+    ${grandMonthly.map(v => `<td style="${tdS};font-weight:700">${money(v)}</td>`).join('')}
+    <td style="${tdS};font-weight:700;color:var(--blue)">${money(grandTotal)}</td>
+  </tr>`;
+
+  tbody.innerHTML = rows;
+}
+
+// ── Export Forecast CSV ──
+function exportForecastCsv() {
+  const infraCosts = loadInfraCosts();
+  const licByProj  = getLicenseCostByProject();
+  const data = {};
+
+  Object.entries(infraCosts).forEach(([proj, programs]) => {
+    if(!data[proj]) data[proj] = {};
+    Object.entries(programs).forEach(([prog, monthly]) => {
+      data[proj][prog] = { type: 'Infra', monthly: Number(monthly)||0 };
+    });
+  });
+  if(typeof getAllLicenses === 'function') {
+    getAllLicenses().forEach(l => {
+      const proj = l.project || '(ไม่ระบุ)';
+      const prog = l.name || 'License';
+      const monthly = (Number(l.pricePerMonth)||0) * (Number(l.seats)||1);
+      if(!monthly) return;
+      if(!data[proj]) data[proj] = {};
+      if(!data[proj][prog]) data[proj][prog] = { type: 'License', monthly: 0 };
+      data[proj][prog].monthly += monthly;
+    });
+  }
+
+  const headers = ['Project','Program','Type',...MONTHS,'Total'];
+  const rows = [headers];
+  Object.entries(data).sort().forEach(([proj, programs]) => {
+    Object.entries(programs).sort((a,b) => b[1].monthly - a[1].monthly).forEach(([prog, d]) => {
+      rows.push([proj, prog, d.type, ...MONTHS.map(() => d.monthly), d.monthly * 12]);
+    });
+  });
+
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `forecast-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
