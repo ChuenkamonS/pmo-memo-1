@@ -61,13 +61,11 @@ function selectType(type, btn) {
     toSel.value = matchOpt ? matchOpt.value : '';
     document.getElementById('to-other-wrap') && (document.getElementById('to-other-wrap').style.display = 'none');
   }
-  // Set approver title dropdown to matching option if exists, else blank
+  // Always reset approver title to blank — user must choose
   const apprTitleSel = document.getElementById('f-appr-title');
-  if(apprTitleSel) {
-    const apprDefault = sCfg?.apprTitle || cfg.apprTitle;
-    const matchOpt = [...apprTitleSel.options].find(o => o.value === apprDefault || o.textContent === apprDefault);
-    apprTitleSel.value = matchOpt ? matchOpt.value : '';
-  }
+  if(apprTitleSel) { apprTitleSel.value = ''; }
+  const apprTitleOther = document.getElementById('f-appr-title-other');
+  if(apprTitleOther) { apprTitleOther.style.display = 'none'; apprTitleOther.value = ''; }
   const rs = document.getElementById('f-reason');
   rs.innerHTML = '<option value="">— เลือกเหตุผล —</option>';
   (sCfg?.reasons || cfg.reasons).forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; rs.appendChild(o); });
