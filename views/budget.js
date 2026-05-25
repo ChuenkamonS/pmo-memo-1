@@ -187,17 +187,11 @@ function renderBudget() {
   const projectSel = val('#bgt-project') || 'all';
   const all = getBudgetMemos(range, projectSel);
   const approved = all.filter(m => memoStatusKey(m)==='completed');
-  const pending  = all.filter(m => memoStatusKey(m)==='pending');
 
   const approvedAmt = approved.reduce((s,m)=>s+(Number(m.total)||0),0);
-  const pendingAmt  = pending.reduce((s,m)=>s+(Number(m.total)||0),0);
-  const forecastAmt = approvedAmt + pendingAmt;
 
   document.getElementById('bgt-total').textContent         = money(approvedAmt);
   document.getElementById('bgt-total-count').textContent   = approved.length + ' รายการ';
-  document.getElementById('bgt-pending-total').textContent = money(pendingAmt);
-  document.getElementById('bgt-pending-count').textContent = pending.length + ' รายการ';
-  document.getElementById('bgt-forecast-total').textContent = money(forecastAmt);
 
   const budgets = typeof loadBudgets==='function' ? loadBudgets() : {};
   const budgetTotal = Object.values(budgets).reduce((s,v)=>s+(Number(v)||0),0);
@@ -211,13 +205,12 @@ function renderBudget() {
   allProjects.forEach(p => {
     const projMemos = all.filter(m=>(m.project||'ไม่ระบุ')===p);
     const app = projMemos.filter(m=>memoStatusKey(m)==='completed').reduce((s,m)=>s+(Number(m.total)||0),0);
-    const pen = projMemos.filter(m=>memoStatusKey(m)==='pending').reduce((s,m)=>s+(Number(m.total)||0),0);
     const budget = Number(budgets[p]||0);
     const util = budget ? Math.round((app/budget)*100) : 0;
     if(util>=80) near++;
     const rem = Math.max(0, budget-app);
     const st = util>90 ? 'Over Budget' : util>=70 ? 'Near Limit' : 'Normal';
-    projRows.push({project:p, budget, approved:app, pending:pen, remaining:rem, util, st});
+    projRows.push({project:p, budget, approved:app, remaining:rem, util, st});
   });
   document.getElementById('bgt-near-limit').textContent = `${near} Projects > 80%`;
 
@@ -251,7 +244,6 @@ function renderBudget() {
         <td>${esc(r.project)}</td>
         <td class="mono">${money(r.budget)}</td>
         <td class="mono">${money(r.approved)}</td>
-        <td class="mono">${money(r.pending)}</td>
         <td class="mono">${money(r.remaining)}</td>
         <td>${r.util}%</td>
         <td><span class="badge ${r.st==='Over Budget'?'badge-red':r.st==='Near Limit'?'badge-amber':'badge-green'}">${r.st}</span></td>
