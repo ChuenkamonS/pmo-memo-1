@@ -646,16 +646,16 @@ body {
   font-size: 12px;
   font-weight: 500;
   font-family: inherit;
-  border: 1px solid var(--border-md);
+  border: 1px solid transparent;
   border-bottom: none;
   border-radius: var(--r-sm) var(--r-sm) 0 0;
-  background: var(--bg);
+  background: transparent;
   color: var(--text-2);
   cursor: pointer;
-  transition: background .15s;
+  transition: background .15s, color .15s;
+  margin-bottom: -1px;
   position: relative;
-  bottom: -1px;
 }
-.cost-stab:hover { background: var(--surface); color: var(--text); }
-.cost-stab.active { background: var(--surface); color: var(--blue); font-weight: 600; border-bottom: 1px solid var(--surface); z-index: 2; }
-.cost-tab-panel { border: 1px solid var(--border-md); border-top: none; border-radius: 0 var(--r-sm) var(--r-sm) var(--r-sm); padding: 14px; background: var(--surface); margin-bottom: 14px; position: relative; z-index: 1; }
+.cost-stab:hover { color: var(--text); background: var(--bg); border-color: var(--border-md); }
+.cost-stab.active { background: var(--surface); color: var(--blue); font-weight: 600; border-color: var(--border-md); border-bottom-color: var(--surface); z-index: 2; }
+.cost-tab-panel { border: 1px solid var(--border-md); border-radius: 0 var(--r-sm) var(--r-sm) var(--r-sm); padding: 14px; background: var(--surface); margin-bottom: 14px; }
