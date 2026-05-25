@@ -841,10 +841,9 @@ svg.icon { display: inline-block; vertical-align: middle; }
                   <option>ผู้อำนวยการ</option>
                   <option value="other">อื่นๆ (กรอกเอง)</option>
                 </select>
-              </div>
-              <div class="fg" id="to-other-wrap" style="display:none">
-                <label>ระบุ *</label>
-                <input type="text" id="f-to-other" placeholder="กรอกชื่อตำแหน่ง">
+                <div id="to-other-wrap" style="display:none;margin-top:6px">
+                  <input type="text" id="f-to-other" placeholder="ระบุ ชื่อผู้ที่เรียนถึง">
+                </div>
               </div>
             </div>
             <div class="fg" style="margin-bottom:8px">
@@ -988,7 +987,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
                 <tbody id="acct-body"></tbody>
               </table>
             </div>
-            <button class="add-btn" onclick="addAcctRow()">+ เพิ่ม Account</button>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <button class="add-btn" onclick="addAcctRow()" style="margin-top:0">+ เพิ่ม Account</button>
+              <button class="btn-sm" onclick="openBulkAcctModal()" style="font-size:11px;padding:5px 10px">⬆ Bulk Upload</button>
+            </div>
           </div>
 
           <!-- Reviewer & Approver -->
@@ -1925,6 +1927,21 @@ svg.icon { display: inline-block; vertical-align: middle; }
 .pend-tab-btn.active { background:var(--surface)!important;color:var(--blue)!important;font-weight:600!important;box-shadow:0 1px 3px rgba(0,0,0,0.08); }
 </style>
 <input type="file" id="bulk-import-input" accept=".xlsx,.xls" style="display:none" onchange="handleBulkImport(event)">
+<!-- Bulk Account Upload Modal -->
+<div id="bulk-acct-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center">
+  <div class="card" style="width:520px;max-width:95vw;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:15px;font-weight:700">Bulk Upload Account</span>
+      <button class="btn-sm" onclick="closeBulkAcctModal()" style="padding:4px 10px">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--text-2);margin-bottom:12px">วาง email 1 บรรทัดต่อ 1 account — ค่า Col จะถูกเติมจาก dropdown ที่ตั้งไว้</p>
+    <textarea id="bulk-acct-input" class="ri" style="width:100%;height:160px;resize:vertical;font-family:inherit;font-size:12px" placeholder="email1@orbitdigital.co.th&#10;email2@orbitdigital.co.th&#10;..."></textarea>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+      <button class="btn-ghost" onclick="closeBulkAcctModal()">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveBulkAcct()">✓ เพิ่ม Account</button>
+    </div>
+  </div>
+</div>
 <!-- Bulk Name Upload Modal -->
 <div id="bulk-name-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center">
   <div class="card" style="width:500px;max-width:95vw;padding:24px">
