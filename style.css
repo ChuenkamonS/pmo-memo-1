@@ -649,19 +649,21 @@ body {
   border: 1px solid rgba(0,0,0,0.12);
   border-bottom: none;
   border-radius: 6px 6px 0 0;
-  background: #F4F3EF;
+  background: #ECEAE4;
   color: #5F5E5A;
   cursor: pointer;
   margin-right: 2px;
   position: relative;
+  top: 1px;
 }
-.cost-stab:hover { background: #ECEAE4; color: #1C1C1A; }
+.cost-stab:hover { background: #E2E0DA; color: #1C1C1A; }
 .cost-stab.active {
   background: #FFFFFF;
   color: #185FA5;
   font-weight: 600;
-  border-color: rgba(0,0,0,0.12);
-  box-shadow: 0 2px 0 0 #FFFFFF;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-bottom: 2px solid #FFFFFF;
+  z-index: 2;
 }
 .cost-tab-bar {
   border-bottom: 1px solid rgba(0,0,0,0.12);
@@ -669,6 +671,8 @@ body {
   align-items: flex-end;
   justify-content: space-between;
   margin-bottom: 0;
+  position: relative;
+  z-index: 1;
 }
 .cost-tab-panel {
   border: 1px solid rgba(0,0,0,0.12);
@@ -677,4 +681,6 @@ body {
   padding: 14px;
   background: #FFFFFF;
   margin-bottom: 14px;
+  position: relative;
+  z-index: 0;
 }
