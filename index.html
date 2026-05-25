@@ -1449,15 +1449,14 @@ svg.icon { display: inline-block; vertical-align: middle; }
         <!-- KPI Cards (always visible) -->
         <div class="metric-row" id="cost-kpi" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px"></div>
 
-        <!-- Sub-tab bar -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
-          <div style="display:flex;gap:2px" id="cost-subtab-bar">
+        <!-- Tab bar row -->
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:0;border-bottom:1px solid var(--border-md)">
+          <div style="display:flex;gap:2px;position:relative;bottom:-1px" id="cost-subtab-bar">
             <button class="cost-stab active" data-tab="overview" onclick="switchCostTab('overview',this)">Overview</button>
             <button class="cost-stab" data-tab="infra" onclick="switchCostTab('infra',this)">Infra Cost</button>
             <button class="cost-stab" data-tab="forecast" onclick="switchCostTab('forecast',this)">Forecast</button>
           </div>
-          <!-- Action buttons move here, shown per tab -->
-          <div id="cost-tab-actions" style="display:flex;gap:8px"></div>
+          <div id="cost-tab-actions" style="display:flex;gap:8px;padding-bottom:8px"></div>
         </div>
 
         <!-- ── Sub-tab: Overview ── -->
