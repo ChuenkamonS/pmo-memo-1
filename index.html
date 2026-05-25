@@ -817,7 +817,7 @@ svg.icon { display: inline-block; vertical-align: middle; }
               <span class="card-title">ข้อมูลทั่วไป</span>
             </div>
             <div class="form-grid" style="margin-bottom:10px">
-              <div class="fg"><label>เลข Memo</label><input type="text" id="f-memo-no" placeholder="เช่น ORB-2605-001"></div>
+              <div class="fg"><label>เลข Memo</label><input type="text" id="f-memo-no" placeholder=""></div>
               <div class="fg"><label>ลงวันที่ *</label><input type="date" id="f-date"></div>
               <div class="fg">
                 <label>โครงการ *</label>
@@ -832,7 +832,20 @@ svg.icon { display: inline-block; vertical-align: middle; }
                 <label>ชื่อโครงการ *</label>
                 <input type="text" id="f-project-other" placeholder="กรอกชื่อโครงการ">
               </div>
-              <div class="fg"><label>เรียน *</label><input type="text" id="f-to" placeholder="ประธานเจ้าหน้าที่บริหาร"></div>
+              <div class="fg">
+                <label>เรียน *</label>
+                <select id="f-to" onchange="toggleToOther()">
+                  <option value="">— เลือก —</option>
+                  <option>ผู้อำนวยการโครงการ</option>
+                  <option>ประธานเจ้าหน้าที่บริหาร</option>
+                  <option>ผู้อำนวยการ</option>
+                  <option value="other">อื่นๆ (กรอกเอง)</option>
+                </select>
+              </div>
+              <div class="fg" id="to-other-wrap" style="display:none">
+                <label>ระบุ *</label>
+                <input type="text" id="f-to-other" placeholder="กรอกชื่อตำแหน่ง">
+              </div>
             </div>
             <div class="fg" style="margin-bottom:8px">
               <label>หัวข้อเรื่อง <span style="font-weight:400;color:var(--text-3)">(สร้างอัตโนมัติ — แก้ไขได้)</span></label>
@@ -911,7 +924,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
               <div id="int-names">
                 <div class="row-name"><span class="name-num">1.</span><input class="ri int-name" type="text" placeholder="ชื่อ-นามสกุล ตำแหน่ง" oninput="calcINT()"><button class="rm-btn" onclick="rmName(this,'int-names');calcINT()" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>
               </div>
-              <button class="add-btn" onclick="addName('int-names','int-name',true)">+ เพิ่มรายชื่อ</button>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+                <button class="add-btn" onclick="addName('int-names','int-name',true)" style="margin-top:0">+ เพิ่มรายชื่อ</button>
+                <button class="btn-sm" onclick="openBulkNameModal('int-names','int-name',true)" style="font-size:11px;padding:5px 10px">⬆ Bulk Upload</button>
+              </div>
               <div class="total-box"><span class="total-label">Total Amount</span><span class="total-val" id="int-total">฿0</span></div>
             </div>
 
@@ -944,7 +960,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
               <div id="dep-names">
                 <div class="row-name"><span class="name-num">1.</span><input class="ri dep-name" type="text" placeholder="ชื่อ-นามสกุล ตำแหน่ง"><button class="rm-btn" onclick="rmName(this,'dep-names')" title="ลบ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>
               </div>
-              <button class="add-btn" onclick="addName('dep-names','dep-name',false)">+ เพิ่มรายชื่อ</button>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+                <button class="add-btn" onclick="addName('dep-names','dep-name',false)" style="margin-top:0">+ เพิ่มรายชื่อ</button>
+                <button class="btn-sm" onclick="openBulkNameModal('dep-names','dep-name',false)" style="font-size:11px;padding:5px 10px">⬆ Bulk Upload</button>
+              </div>
             </div>
 
           </div><!-- /dynamic card -->
@@ -978,22 +997,54 @@ svg.icon { display: inline-block; vertical-align: middle; }
               <div class="card-num" id="rev-num">4</div>
               <span class="card-title">Reviewer & Approver</span>
             </div>
-            <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">ผู้ขอ (Requester)</div>
-            <div class="form-grid-3" style="margin-bottom:14px">
-              <div class="fg"><label>ชื่อผู้ขอ *</label><input type="text" id="f-requester-name" value="Chuen K." placeholder="ชื่อ-นามสกุล"></div>
-              <div class="fg"><label>ตำแหน่ง</label><input type="text" id="f-requester-title" value="PMO" placeholder="เช่น PMO"></div>
-              <div class="fg"></div>
-            </div>
             <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Reviewer</div>
             <div class="form-grid-3" style="margin-bottom:14px">
-              <div class="fg"><label>ชื่อ Reviewer *</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
-              <div class="fg"><label>ตำแหน่ง *</label><input type="text" value="ผู้จัดการโครงการ"></div>
+              <div class="fg">
+                <label>ชื่อ Reviewer *</label>
+                <select id="f-reviewer-name" onchange="toggleReviewerNameOther()">
+                  <option value="">— เลือก —</option>
+                  <option>นาย นวพล งามวรโรจน์สกุล</option>
+                  <option>นาย ปกรณ์ เจียมสกุลทิพย์</option>
+                  <option value="other">อื่นๆ (กรอกเอง)</option>
+                </select>
+                <input type="text" id="f-reviewer-name-other" placeholder="กรอกชื่อ-นามสกุล" style="display:none;margin-top:6px">
+              </div>
+              <div class="fg">
+                <label>ตำแหน่ง *</label>
+                <select id="f-reviewer-title" onchange="toggleReviewerTitleOther()">
+                  <option value="">— เลือก —</option>
+                  <option>ผู้อำนวยการโครงการ</option>
+                  <option>ประธานเจ้าหน้าที่บริหาร</option>
+                  <option>ผู้อำนวยการ</option>
+                  <option value="other">อื่นๆ (กรอกเอง)</option>
+                </select>
+                <input type="text" id="f-reviewer-title-other" placeholder="กรอกตำแหน่ง" style="display:none;margin-top:6px">
+              </div>
               <div class="fg"><label>วันที่ลงนาม</label><input type="date" id="f-signdate"></div>
             </div>
             <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Approver</div>
             <div class="form-grid-3">
-              <div class="fg"><label>ชื่อ Approver *</label><input type="text" placeholder="ชื่อ-นามสกุล"></div>
-              <div class="fg"><label>ตำแหน่ง *</label><input type="text" id="f-appr-title" value="ประธานเจ้าหน้าที่บริหาร"></div>
+              <div class="fg">
+                <label>ชื่อ Approver *</label>
+                <select id="f-approver-name" onchange="toggleApproverNameOther()">
+                  <option value="">— เลือก —</option>
+                  <option>นาย นวพล งามวรโรจน์สกุล</option>
+                  <option>นาย ปกรณ์ เจียมสกุลทิพย์</option>
+                  <option value="other">อื่นๆ (กรอกเอง)</option>
+                </select>
+                <input type="text" id="f-approver-name-other" placeholder="กรอกชื่อ-นามสกุล" style="display:none;margin-top:6px">
+              </div>
+              <div class="fg">
+                <label>ตำแหน่ง *</label>
+                <select id="f-appr-title" onchange="toggleApproverTitleOther()">
+                  <option value="">— เลือก —</option>
+                  <option>ผู้อำนวยการโครงการ</option>
+                  <option>ประธานเจ้าหน้าที่บริหาร</option>
+                  <option>ผู้อำนวยการ</option>
+                  <option value="other">อื่นๆ (กรอกเอง)</option>
+                </select>
+                <input type="text" id="f-appr-title-other" placeholder="กรอกตำแหน่ง" style="display:none;margin-top:6px">
+              </div>
               <div class="fg"><label>วันที่ลงนาม</label><input type="date" id="f-apprdate"></div>
             </div>
           </div>
@@ -1874,5 +1925,20 @@ svg.icon { display: inline-block; vertical-align: middle; }
 .pend-tab-btn.active { background:var(--surface)!important;color:var(--blue)!important;font-weight:600!important;box-shadow:0 1px 3px rgba(0,0,0,0.08); }
 </style>
 <input type="file" id="bulk-import-input" accept=".xlsx,.xls" style="display:none" onchange="handleBulkImport(event)">
+<!-- Bulk Name Upload Modal -->
+<div id="bulk-name-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center">
+  <div class="card" style="width:500px;max-width:95vw;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:15px;font-weight:700">Bulk Upload รายชื่อ</span>
+      <button class="btn-sm" onclick="closeBulkNameModal()" style="padding:4px 10px">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--text-2);margin-bottom:12px">วางรายชื่อได้เลย — 1 บรรทัด ต่อ 1 คน เช่น<br><code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">นาย สมชาย ใจดี ตำแหน่ง Developer</code></p>
+    <textarea id="bulk-name-input" class="ri" style="width:100%;height:160px;resize:vertical;font-family:inherit;font-size:12px" placeholder="วางรายชื่อที่นี่...&#10;นาย สมชาย ใจดี Developer&#10;นาง สมหญิง รักงาน QA&#10;..."></textarea>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+      <button class="btn-ghost" onclick="closeBulkNameModal()">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveBulkNames()">✓ เพิ่มรายชื่อ</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
