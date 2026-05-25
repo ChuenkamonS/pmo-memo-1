@@ -347,6 +347,7 @@ body {
 .badge-blue   { background: var(--blue-50);   color: var(--blue-800); }
 .badge-green  { background: var(--green-50);  color: var(--green); }
 .badge-amber  { background: var(--amber-50);  color: var(--amber); }
+.badge-orange { background: #FFF0E6;           color: #C05000; }
 .badge-red    { background: var(--red-50);    color: var(--red); }
 .badge-gray   { background: var(--gray-50);   color: var(--gray); }
 .badge-purple { background: var(--purple-50); color: var(--purple); }

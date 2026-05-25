@@ -1195,16 +1195,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
         <!-- Metric cards -->
         <div class="metric-row" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
           <div class="metric-card"><div class="metric-label">Active Licenses</div><div class="metric-val" id="lic-active" style="color:var(--blue)">0</div><div class="metric-sub" id="lic-active-cost"></div></div>
-          <div class="metric-card"><div class="metric-label">Renew Soon (≤30d)</div><div class="metric-val" id="lic-expiring" style="color:var(--amber)">0</div><div class="metric-sub">ต้องต่ออายุเร็วๆ นี้</div></div>
+          <div class="metric-card"><div class="metric-label">Expiring Soon (≤30d)</div><div class="metric-val" id="lic-expiring" style="color:var(--amber)">0</div><div class="metric-sub">ต้องต่ออายุเร็วๆ นี้</div></div>
           <div class="metric-card"><div class="metric-label">Expired</div><div class="metric-val" id="lic-expired" style="color:var(--red)">0</div><div class="metric-sub">หมดอายุแล้ว</div></div>
           <div class="metric-card"><div class="metric-label">ค่าใช้จ่าย/เดือน</div><div class="metric-val" id="lic-monthly" style="font-size:18px;margin-top:4px">฿0</div><div class="metric-sub">รวมทุก active</div></div>
           <div class="metric-card"><div class="metric-label">ค่าใช้จ่าย/ปี</div><div class="metric-val" id="lic-annual" style="font-size:18px;margin-top:4px">฿0</div><div class="metric-sub" id="lic-renewal-3m"></div></div>
-        </div>
-
-        <!-- Alert section: 7-day urgent -->
-        <div id="lic-alert-section" style="display:none;margin-bottom:12px">
-          <div style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⚠ หมดอายุภายใน 7 วัน</div>
-          <div id="lic-alert-list"></div>
         </div>
 
         <!-- Cost Trend Chart -->
@@ -1221,7 +1215,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
           <select id="lic-filter-status" onchange="renderLicense()" style="font-family:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
             <option value="all">ทุกสถานะ</option>
             <option value="active">Active</option>
-            <option value="renew-soon">Renew Soon</option>
+            <option value="expiring">Expiring (≤30d)</option>
+            <option value="expiring-7">≤ 7 วัน</option>
+            <option value="expiring-15">≤ 15 วัน</option>
+            <option value="expiring-30">≤ 30 วัน</option>
             <option value="expired">Expired</option>
             <option value="cancelled">Cancelled</option>
           </select>
@@ -1266,10 +1263,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
           </table>
         </div>
 
-        <!-- Seat Usage per Project × Program -->
+        <!-- Cost Breakdown by Project × Software -->
         <div class="card" style="padding:0;overflow:hidden;margin-top:14px">
           <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-            <div style="font-size:12px;font-weight:600">Seat Usage by Project × Program</div>
+            <div id="lic-breakdown-title" style="font-size:12px;font-weight:600">Cost Breakdown by Project × Software (Monthly THB)</div>
             <div style="font-size:11px;color:var(--text-3)">Dynamic — columns auto-added when new programs are licensed</div>
           </div>
           <div style="overflow-x:auto">
