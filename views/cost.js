@@ -199,12 +199,10 @@ function renderCost() {
   // ── Render Chart ──
   renderCostChart(totalLicense, totalInfra, totalBudget);
 
-  // Init action buttons for default tab (overview)
+  // Init action buttons for default tab (overview) — only on first load
   const actions = document.getElementById('cost-tab-actions');
   if(actions && !actions.hasChildNodes()) {
-    actions.innerHTML = `
-      <button class="btn-sm" onclick="openBudgetCostModal()" style="font-size:12px;padding:6px 12px">📊 Set Annual Budget</button>
-      <button class="btn-primary" onclick="openInfraModal()" style="font-size:12px;padding:6px 14px">+ Add Infra Cost</button>`;
+    switchCostTab('overview', document.querySelector('.cost-stab[data-tab="overview"]'));
   }
 }
 
@@ -393,11 +391,13 @@ document.addEventListener('click', e => {
 function switchCostTab(tab, btn) {
   document.querySelectorAll('.cost-tab-panel').forEach(p => p.style.display = 'none');
   document.querySelectorAll('.cost-stab').forEach(b => b.classList.remove('active'));
-  document.getElementById('cost-tab-' + tab).style.display = '';
-  btn.classList.add('active');
+  const panel = document.getElementById('cost-tab-' + tab);
+  if(panel) panel.style.display = '';
+  if(btn) btn.classList.add('active');
 
   // Per-tab action buttons
   const actions = document.getElementById('cost-tab-actions');
+  if(!actions) return;
   if(tab === 'overview') {
     actions.innerHTML = `
       <button class="btn-sm" onclick="openBudgetCostModal()" style="font-size:12px;padding:6px 12px">📊 Set Annual Budget</button>
@@ -406,8 +406,7 @@ function switchCostTab(tab, btn) {
     actions.innerHTML = `
       <button class="btn-primary" onclick="openInfraModal()" style="font-size:12px;padding:6px 14px">+ Add Infra Cost</button>`;
   } else if(tab === 'forecast') {
-    actions.innerHTML = `
-      <button class="btn-sm" onclick="exportForecastCsv()" style="font-size:12px;padding:6px 12px">⬇ Export CSV</button>`;
+    actions.innerHTML = '';
     renderForecast();
   }
 }
