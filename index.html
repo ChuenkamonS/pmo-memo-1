@@ -1468,8 +1468,9 @@ svg.icon { display: inline-block; vertical-align: middle; }
               <th style="padding-left:14px">Project</th>
               <th>License (฿)</th>
               <th>Infra (฿)</th>
-              <th>Total (฿)</th>
+              <th>Total/Mo (฿)</th>
               <th>Budget/Mo (฿)</th>
+              <th>Year-End Forecast (฿)</th>
               <th style="text-align:center">Utilization</th>
             </tr></thead>
             <tbody id="cost-proj-body"></tbody>
@@ -1483,17 +1484,15 @@ svg.icon { display: inline-block; vertical-align: middle; }
             <div style="height:220px"><canvas id="cost-chart"></canvas></div>
           </div>
           <div class="card" style="padding:0;overflow:hidden">
-            <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600">
-              Infra Cost by Program
+            <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:12px;font-weight:600">Infra Cost by Program × Project</div>
             </div>
-            <table class="hist-table">
-              <thead><tr>
-                <th style="padding-left:14px">Program</th>
-                <th>Monthly (฿)</th>
-                <th>Annual (฿)</th>
-              </tr></thead>
-              <tbody id="cost-infra-body"></tbody>
-            </table>
+            <div style="overflow-x:auto">
+              <table class="hist-table">
+                <thead id="cost-infra-thead"></thead>
+                <tbody id="cost-infra-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
