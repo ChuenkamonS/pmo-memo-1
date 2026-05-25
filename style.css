@@ -646,16 +646,14 @@ body {
   font-size: 12px;
   font-weight: 500;
   font-family: inherit;
-  border: 1px solid #E0DED8;
+  border: 1px solid rgba(0,0,0,0.12);
   border-bottom: none;
   border-radius: 6px 6px 0 0;
   background: #F4F3EF;
   color: #5F5E5A;
   cursor: pointer;
   margin-right: 2px;
-  margin-bottom: -1px;
   position: relative;
-  z-index: 1;
 }
 .cost-stab:hover { background: #ECEAE4; color: #1C1C1A; }
 .cost-stab.active {
@@ -663,15 +661,13 @@ body {
   color: #185FA5;
   font-weight: 600;
   border-color: rgba(0,0,0,0.12);
-  z-index: 3;
+  box-shadow: 0 2px 0 0 #FFFFFF;
 }
 .cost-tab-bar {
   border-bottom: 1px solid rgba(0,0,0,0.12);
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  position: relative;
-  z-index: 2;
   margin-bottom: 0;
 }
 .cost-tab-panel {
