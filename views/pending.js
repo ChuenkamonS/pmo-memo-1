@@ -56,22 +56,22 @@ function switchPendingTab(tab) {
 function renderPendingMemos() {
   const list = document.getElementById('pending-list');
   if(!list) return;
-  const allMemos = loadMemos();
-  const pending  = allMemos.filter(m => !m.status || m.status === 'pending');
-  const totalAmt = pending.reduce((s,m) => s+(Number(m.total)||0), 0);
+  const allMemos  = loadMemos();
+  const pending   = allMemos.filter(m => !m.status || m.status === 'pending');
+  const submitted = allMemos.filter(m => ['pending','completed','rejected'].includes(m.status) && m.status !== 'draft');
+  const drafts    = allMemos.filter(m => m.status === 'draft');
   const el = id => document.getElementById(id);
-  if(el('pending-count'))  el('pending-count').textContent  = pending.length;
-  if(el('pending-total'))  el('pending-total').textContent  = money(totalAmt);
-  if(el('pending-latest')) el('pending-latest').textContent = pending[0]?.memoNo || '-';
+  if(el('pending-count'))        el('pending-count').textContent        = pending.length;
+  if(el('pending-my-submitted')) el('pending-my-submitted').textContent = submitted.filter(m => !m.status || m.status === 'pending').length;
+  if(el('pending-draft-count'))  el('pending-draft-count').textContent  = drafts.length;
   const badge = document.querySelector('#memo-sub .sb-badge');
   if(badge) badge.textContent = pending.length;
   const counts = {
     awaiting:  pending.length,
-    submitted: allMemos.filter(m=>['pending','completed','rejected'].includes(m.status)).length,
-    rejected:  allMemos.filter(m=>m.status==='rejected').length,
-    drafts:    allMemos.filter(m=>m.status==='draft').length
+    submitted: submitted.length,
+    drafts:    drafts.length
   };
-  Object.entries(counts).forEach(([tab,count]) => {
+  Object.entries(counts).forEach(([tab, count]) => {
     const el = document.querySelector(`.pend-tab-btn[data-tab="${tab}"] .tab-count`);
     if(el) el.textContent = count > 0 ? count : '';
   });
