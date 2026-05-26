@@ -196,9 +196,6 @@ function renderCost() {
     }
   }
 
-  // ── Render Chart ──
-  renderCostChart(totalLicense, totalInfra, totalBudget);
-
   // Init action buttons for default tab (overview) — only on first load
   const actions = document.getElementById('cost-tab-actions');
   if(actions && !actions.hasChildNodes()) {

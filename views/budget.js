@@ -1,265 +1,379 @@
 // ─────────────────────────────────────────
-// views/budget.js — Budget Monitor
+// views/budget.js — Memo & Budget Monitor
 // ─────────────────────────────────────────
 
-let bgtTypeChart = null;
-let bgtProjChart = null;
-let bgtTrendChart = null;
-
-const BGT_TYPE_NAMES = { sl:'Software License', hw:'Hardware', int:'Team Activity', ent:'Client Expense', dep:'Deployment' };
-const BGT_TYPE_COLORS = { sl:'#4E79A7', hw:'#76B7B2', int:'#59A14F', ent:'#F28E2B', dep:'#B07AA1' };
-const BGT_PROJ_PALETTE = ['#4E79A7','#F28E2B','#59A14F','#E15759','#76B7B2','#EDC948','#B07AA1','#FF9DA7','#9C755F','#BAB0AC'];
-
-function memoDate(m){ return new Date(m.updatedAt||m.approvedAt||m.createdAt||0); }
-function memoStatusKey(m){
-  if(m.status==='completed') return 'completed';
-  if(!m.status || m.status==='pending') return 'pending';
-  if(m.status==='rejected') return 'rejected';
-  return m.status||'pending';
-}
-function statusBadge(st){
-  if(st==='completed') return 'badge-green';
-  if(st==='pending') return 'badge-amber';
-  if(st==='rejected') return 'badge-red';
-  return 'badge-gray';
-}
-
+// ── Data helpers ──
 function getBudgetMemos(range, project) {
+  let memos = loadMemos();
   const now = new Date();
-  return loadMemos().filter(memo => {
-    if(project !== 'all' && memo.project !== project) return false;
-    const dt = memoDate(memo);
-    if(range==='month') return dt.getFullYear()===now.getFullYear() && dt.getMonth()===now.getMonth();
-    if(range==='last-month') {
-      const last = new Date(now.getFullYear(), now.getMonth()-1, 1);
-      return dt.getFullYear()===last.getFullYear() && dt.getMonth()===last.getMonth();
-    }
-    if(range==='3-months') return dt >= new Date(now.getFullYear(), now.getMonth()-2, 1);
-    return true;
-  });
-}
-
-function renderBudgetTrend(allMemos){
-  const canvas = document.getElementById('bgt-trend-chart');
-  if(!canvas || typeof Chart === 'undefined') return;
-  if(bgtTrendChart) bgtTrendChart.destroy();
-  const labels=[]; const data=[];
-  const now = new Date();
-  for(let i=11;i>=0;i--){
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    labels.push(d.toLocaleDateString('th-TH',{month:'short', year:'2-digit'}));
-    const sum = allMemos.filter(m=>memoStatusKey(m)==='completed').filter(m=>{
-      const md = memoDate(m);
-      const mk = `${md.getFullYear()}-${String(md.getMonth()+1).padStart(2,'0')}`;
-      return mk===key;
-    }).reduce((s,m)=>s+(Number(m.total)||0),0);
-    data.push(sum);
+  if(range === 'month') {
+    memos = memos.filter(m => {
+      const d = new Date(m.updatedAt||m.createdAt);
+      return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();
+    });
+  } else if(range === 'last-month') {
+    const lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    memos = memos.filter(m => {
+      const d = new Date(m.updatedAt||m.createdAt);
+      return d.getFullYear()===lm.getFullYear() && d.getMonth()===lm.getMonth();
+    });
+  } else if(range === '3-months') {
+    const cut = new Date(now); cut.setMonth(cut.getMonth()-3);
+    memos = memos.filter(m => new Date(m.updatedAt||m.createdAt) >= cut);
   }
-  bgtTrendChart = new Chart(canvas, {
-    type:'line',
-    data:{labels,datasets:[{label:'Monthly Spend', data, borderColor:'#185FA5', backgroundColor:'rgba(24,95,165,.12)', tension:.28, fill:true}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>money(v)}}}}
-  });
+  if(project && project !== 'all') memos = memos.filter(m => m.project === project);
+
+  // search
+  const search = (val('#bgt-search')||'').toLowerCase();
+  if(search) memos = memos.filter(m => `${m.memoNo} ${m.project} ${m.reviewerName} ${m.approverName} ${m.requesterName}`.toLowerCase().includes(search));
+
+  // type
+  const ft = val('#bgt-filter-type')||'all';
+  if(ft !== 'all') memos = memos.filter(m => m.type === ft);
+
+  // status
+  const fs = val('#bgt-filter-status')||'all';
+  if(fs !== 'all') memos = memos.filter(m => memoStatusKey(m) === fs);
+
+  return memos;
 }
 
-function renderBudgetTypeChart(rows){
-  const canvas = document.getElementById('bgt-type-chart');
-  if(!canvas || typeof Chart === 'undefined') return;
-  if(bgtTypeChart) { bgtTypeChart.destroy(); bgtTypeChart = null; }
-  if(!rows.length) return;
-  bgtTypeChart = new Chart(canvas, {
-    type: 'doughnut',
-    data: {
-      labels: rows.map(([k]) => BGT_TYPE_NAMES[k]||k.toUpperCase()),
-      datasets: [{ data: rows.map(([,d])=>d.total), backgroundColor: rows.map(([k])=>BGT_TYPE_COLORS[k]||'#bbb'), borderWidth:2, borderColor:'#fff' }]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false, cutout:'55%',
-      plugins:{
-        legend:{position:'bottom', labels:{font:{size:11}, padding:12}},
-        tooltip:{ callbacks:{ label: ctx => {
-          const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
-          const pct = total ? Math.round(ctx.parsed/total*100) : 0;
-          return ` ${ctx.label}: ${money(ctx.parsed)} (${pct}%)`;
-        }}}
-      }
-    },
-    plugins:[{
-      id:'pct-labels-type',
-      afterDatasetDraw(chart){
-        const {ctx, data} = chart;
-        const total = data.datasets[0].data.reduce((a,b)=>a+b,0);
-        chart.getDatasetMeta(0).data.forEach((arc, i) => {
-          const val = data.datasets[0].data[i];
-          const pct = total ? Math.round(val/total*100) : 0;
-          if(pct < 8) return;
-          const angle = (arc.startAngle + arc.endAngle) / 2;
-          const r = (arc.outerRadius + arc.innerRadius) / 2;
-          const x = arc.x + Math.cos(angle) * r;
-          const y = arc.y + Math.sin(angle) * r;
-          ctx.save();
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 12px IBM Plex Sans Thai, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(`${pct}%`, x, y);
-          ctx.restore();
-        });
-      }
-    }]
-  });
+// ── Sub-tab switching ──
+function switchBudgetTab(tab, btn) {
+  document.querySelectorAll('#view-budget .cost-tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('#bgt-subtab-bar .cost-stab').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('bgt-tab-' + tab);
+  if(panel) panel.style.display = '';
+  if(btn) btn.classList.add('active');
+  if(tab === 'trend') renderBudgetTrendTab();
 }
 
-function renderBudgetProjChart(rows){
-  const canvas = document.getElementById('bgt-proj-chart');
-  const legend = document.getElementById('bgt-proj-legend');
-  if(!canvas || typeof Chart === 'undefined') return;
-  if(bgtProjChart) { bgtProjChart.destroy(); bgtProjChart = null; }
-  if(!rows.length) {
-    if(legend) legend.innerHTML = '<span style="color:var(--text-3)">ยังไม่มีข้อมูล</span>';
-    return;
-  }
-
-  const totalAmt = rows.reduce((s,[,d])=>s+d.total, 0);
-  const colors = rows.map(([,],i) => BGT_PROJ_PALETTE[i % BGT_PROJ_PALETTE.length]);
-
-  bgtProjChart = new Chart(canvas, {
-    type: 'doughnut',
-    data: {
-      labels: rows.map(([k]) => k),
-      datasets: [{ data: rows.map(([,d])=>d.total), backgroundColor: colors, borderWidth:2, borderColor:'#fff' }]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false, cutout:'52%',
-      plugins:{
-        legend:{ display:false },
-        tooltip:{ callbacks:{ label: ctx => {
-          const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
-          const pct = total ? Math.round(ctx.parsed/total*100) : 0;
-          return ` ${ctx.label}: ${money(ctx.parsed)} (${pct}%)`;
-        }}}
-      }
-    },
-    plugins:[{
-      id:'pct-labels',
-      afterDatasetDraw(chart){
-        const {ctx, data} = chart;
-        const total = data.datasets[0].data.reduce((a,b)=>a+b,0);
-        chart.getDatasetMeta(0).data.forEach((arc, i) => {
-          const val = data.datasets[0].data[i];
-          const pct = total ? Math.round(val/total*100) : 0;
-          if(pct < 5) return; // skip tiny slices
-          const angle = (arc.startAngle + arc.endAngle) / 2;
-          const r = (arc.outerRadius + arc.innerRadius) / 2;
-          const x = arc.x + Math.cos(angle) * r;
-          const y = arc.y + Math.sin(angle) * r;
-          ctx.save();
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 12px IBM Plex Sans Thai, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(`${pct}%`, x, y);
-          ctx.restore();
-        });
-      }
-    }]
-  });
-
-  // Custom legend with % and amount
-  if(legend) {
-    legend.innerHTML = rows.map(([proj, d], i) => {
-      const pct = totalAmt ? Math.round(d.total/totalAmt*100) : 0;
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <div style="width:12px;height:12px;border-radius:3px;flex-shrink:0;background:${colors[i]}"></div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:12px;color:var(--text)">${esc(proj)}</div>
-          <div style="font-size:11px;color:var(--text-2)">${money(d.total)} &nbsp;·&nbsp; ${pct}%</div>
-        </div>
-        <div style="font-size:10px;font-weight:600;color:var(--text-3)">${d.count} memo</div>
-      </div>`;
-    }).join('');
-  }
-}
-
+// ── Main render ──
 function renderBudget() {
-  const range = val('#bgt-range') || 'month';
+  const range      = val('#bgt-range') || 'month';
   const projectSel = val('#bgt-project') || 'all';
-  const all = getBudgetMemos(range, projectSel);
-  const approved = all.filter(m => memoStatusKey(m)==='completed');
+  const all        = getBudgetMemos(range, projectSel);
+  const approved   = all.filter(m => memoStatusKey(m) === 'completed');
 
-  const approvedAmt = approved.reduce((s,m)=>s+(Number(m.total)||0),0);
+  const approvedAmt = approved.reduce((s,m) => s+(Number(m.total)||0), 0);
+  document.getElementById('bgt-total').textContent       = money(approvedAmt);
+  document.getElementById('bgt-total-count').textContent = approved.length + ' รายการ';
 
-  document.getElementById('bgt-total').textContent         = money(approvedAmt);
-  document.getElementById('bgt-total-count').textContent   = approved.length + ' รายการ';
-
-  const budgets = typeof loadBudgets==='function' ? loadBudgets() : {};
-  const budgetTotal = Object.values(budgets).reduce((s,v)=>s+(Number(v)||0),0);
-  const utilPct = budgetTotal ? Math.round((approvedAmt/budgetTotal)*100) : 0;
+  const budgets     = typeof loadBudgets === 'function' ? loadBudgets() : {};
+  const budgetTotal = Object.values(budgets).reduce((s,v) => s+(Number(v)||0), 0);
+  const utilPct     = budgetTotal ? Math.round((approvedAmt/budgetTotal)*100) : 0;
   document.getElementById('bgt-util').textContent = `${utilPct}% Utilized`;
 
-  // Near limit count
-  const allProjects = [...new Set(all.map(m=>m.project||'ไม่ระบุ'))];
+  // Per-project rows
+  const allProjects = [...new Set(all.map(m => m.project||'ไม่ระบุ'))];
   let near = 0;
   const projRows = [];
   allProjects.forEach(p => {
-    const projMemos = all.filter(m=>(m.project||'ไม่ระบุ')===p);
-    const app = projMemos.filter(m=>memoStatusKey(m)==='completed').reduce((s,m)=>s+(Number(m.total)||0),0);
+    const projMemos = all.filter(m => (m.project||'ไม่ระบุ') === p);
+    const app    = projMemos.filter(m => memoStatusKey(m)==='completed').reduce((s,m) => s+(Number(m.total)||0), 0);
     const budget = Number(budgets[p]||0);
-    const util = budget ? Math.round((app/budget)*100) : 0;
-    if(util>=80) near++;
+    const util   = budget ? Math.round((app/budget)*100) : 0;
+    if(util >= 80) near++;
     const rem = Math.max(0, budget-app);
-    const st = util>90 ? 'Over Budget' : util>=70 ? 'Near Limit' : 'Normal';
-    projRows.push({project:p, budget, approved:app, remaining:rem, util, st});
+    const st  = util > 100 ? 'Over Budget' : util >= 70 ? 'Near Limit' : 'Normal';
+    projRows.push({ project:p, budget, approved:app, remaining:rem, util, st, memos:projMemos });
   });
   document.getElementById('bgt-near-limit').textContent = `${near} Projects > 80%`;
 
-  // By type chart
+  // Budget vs Actual chart
+  renderBudgetVsActualChart(projRows);
+
+  // Type chart
   const byType = {};
   approved.forEach(m => {
-    if(!byType[m.type]) byType[m.type]={count:0,total:0};
+    if(!byType[m.type]) byType[m.type] = { count:0, total:0 };
     byType[m.type].count++; byType[m.type].total += Number(m.total)||0;
   });
-  const typeRows = Object.entries(byType).sort((a,b)=>b[1].total-a[1].total);
-  renderBudgetTypeChart(typeRows);
+  renderBudgetTypeChart(Object.entries(byType).sort((a,b) => b[1].total-a[1].total));
 
-  // By project chart — ALL projects with %
-  const byProj = {};
-  approved.forEach(m => {
-    const p = m.project||'ไม่ระบุ';
-    if(!byProj[p]) byProj[p]={count:0,total:0};
-    byProj[p].count++; byProj[p].total += Number(m.total)||0;
-  });
-  const projAggRows = Object.entries(byProj).sort((a,b)=>b[1].total-a[1].total);
-  renderBudgetProjChart(projAggRows);
-
-  // Trend chart
-  renderBudgetTrend(all);
-
-  // Project summary table
+  // Project summary table with drill-down
   const sumBody = document.getElementById('bgt-summary-body');
   sumBody.innerHTML = !projRows.length
-    ? '<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text-3)">ยังไม่มีข้อมูล</td></tr>'
-    : projRows.map(r=>`<tr>
-        <td>${esc(r.project)}</td>
+    ? '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">ยังไม่มีข้อมูล</td></tr>'
+    : projRows.map(r => `<tr style="cursor:pointer" onclick="drilldownProject('${esc(r.project)}')" title="คลิกดูรายการ memo">
+        <td style="font-weight:500">${esc(r.project)}</td>
         <td class="mono">${money(r.budget)}</td>
         <td class="mono">${money(r.approved)}</td>
         <td class="mono">${money(r.remaining)}</td>
-        <td>${r.util}%</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${Math.min(r.util,100)}%;background:${r.util>100?'var(--red)':r.util>=70?'var(--amber)':'var(--green)'};border-radius:3px"></div>
+            </div>
+            <span style="font-size:11px;min-width:32px;text-align:right">${r.util}%</span>
+          </div>
+        </td>
         <td><span class="badge ${r.st==='Over Budget'?'badge-red':r.st==='Near Limit'?'badge-amber':'badge-green'}">${r.st}</span></td>
       </tr>`).join('');
+
+  // Init trend tab if active
+  const trendActive = document.querySelector('#bgt-subtab-bar .cost-stab[data-tab="trend"]')?.classList.contains('active');
+  if(trendActive) renderBudgetTrendTab();
+}
+
+// ── Budget vs Actual bar chart ──
+function renderBudgetVsActualChart(projRows) {
+  const canvas = document.getElementById('bgt-vs-actual-chart');
+  if(!canvas || typeof Chart === 'undefined') return;
+  if(canvas._chart) canvas._chart.destroy();
+
+  const labels  = projRows.map(r => r.project);
+  const budgets = projRows.map(r => r.budget);
+  const actuals = projRows.map(r => r.approved);
+
+  canvas._chart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Budget', data: budgets, backgroundColor: 'rgba(24,95,165,0.15)', borderColor: '#185FA5', borderWidth: 1.5, borderRadius: 4 },
+        { label: 'Actual', data: actuals, backgroundColor: actuals.map((v,i) => v > budgets[i] ? '#A32D2D' : '#3B6D11'), borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { ticks: { callback: v => '฿'+Number(v).toLocaleString('th-TH'), font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// ── Drill-down ──
+function drilldownProject(project) {
+  const range = val('#bgt-range') || 'month';
+  const all   = getBudgetMemos(range, 'all');
+  const memos = all.filter(m => (m.project||'ไม่ระบุ') === project)
+    .sort((a,b) => new Date(b.updatedAt||b.createdAt) - new Date(a.updatedAt||a.createdAt));
+
+  document.getElementById('bgt-drilldown-title').textContent = `${project} — ${memos.length} รายการ`;
+  const body = document.getElementById('bgt-drilldown-body');
+  body.innerHTML = !memos.length
+    ? '<tr><td colspan="6" style="padding:12px;text-align:center;color:var(--text-3)">ไม่มีรายการ</td></tr>'
+    : memos.map(m => `<tr>
+        <td style="font-size:11px;font-family:monospace">${esc(m.memoNo||'—')}</td>
+        <td><span class="badge badge-blue" style="font-size:10px">${(m.type||'').toUpperCase()}</span></td>
+        <td style="font-size:12px">${esc(m.subject||'—')}</td>
+        <td class="mono">${money(Number(m.total)||0)}</td>
+        <td><span class="badge ${memoStatusKey(m)==='completed'?'badge-green':memoStatusKey(m)==='pending'?'badge-amber':'badge-gray'}" style="font-size:10px">${memoStatusKey(m)}</span></td>
+        <td style="font-size:11px">${shortDate(m.updatedAt||m.createdAt)}</td>
+      </tr>`).join('');
+
+  const panel = document.getElementById('bgt-drilldown');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Type chart ──
+function renderBudgetTypeChart(rows) {
+  const canvas = document.getElementById('bgt-type-chart');
+  if(!canvas || typeof Chart === 'undefined') return;
+  if(canvas._chart) canvas._chart.destroy();
+  const TYPE_COLORS = { sl:'#185FA5', hw:'#3B6D11', int:'#854F0B', ent:'#3C3489', dep:'#A32D2D' };
+  canvas._chart = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: rows.map(([t]) => t.toUpperCase()),
+      datasets: [{ data: rows.map(([,v]) => v.total), backgroundColor: rows.map(([t]) => TYPE_COLORS[t]||'#888'), borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${money(ctx.raw)}` } }
+      }
+    }
+  });
+}
+
+// ── Trend tab ──
+let _bgtProjSelected = new Set();
+let _bgtTypeSelected = new Set(['sl','hw','int','ent','dep']);
+
+function renderBudgetTrendTab() {
+  const allMemos   = loadMemos().filter(m => memoStatusKey(m) === 'completed');
+  const allProjects = [...new Set(allMemos.map(m => m.project||'ไม่ระบุ'))].sort();
+  const allTypes    = ['sl','hw','int','ent','dep'];
+
+  if(!_bgtProjSelected.size) allProjects.forEach(p => _bgtProjSelected.add(p));
+
+  // Build project checkboxes
+  const projBox = document.getElementById('bgt-proj-checkboxes');
+  if(projBox && !projBox.children.length) {
+    projBox.innerHTML = allProjects.map(p => `
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap">
+        <input type="checkbox" ${_bgtProjSelected.has(p)?'checked':''} onchange="toggleBgtProj('${esc(p)}',this.checked)">
+        ${esc(p)}
+      </label>`).join('');
+  }
+
+  // Build type checkboxes
+  const typeBox = document.getElementById('bgt-type-checkboxes');
+  if(typeBox && !typeBox.children.length) {
+    typeBox.innerHTML = allTypes.map(t => `
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+        <input type="checkbox" ${_bgtTypeSelected.has(t)?'checked':''} onchange="toggleBgtType('${t}',this.checked)">
+        ${t.toUpperCase()}
+      </label>`).join('');
+  }
+
+  renderBudgetTrendChart(allMemos);
+  renderBudgetProjChart(allMemos);
+}
+
+function toggleBgtProj(proj, checked) {
+  if(checked) _bgtProjSelected.add(proj); else _bgtProjSelected.delete(proj);
+  renderBudgetTrendChart(loadMemos().filter(m => memoStatusKey(m)==='completed'));
+}
+function toggleBgtType(type, checked) {
+  if(checked) _bgtTypeSelected.add(type); else _bgtTypeSelected.delete(type);
+  renderBudgetTrendChart(loadMemos().filter(m => memoStatusKey(m)==='completed'));
+}
+
+function renderBudgetTrendChart(allMemos) {
+  const canvas = document.getElementById('bgt-trend-chart');
+  if(!canvas || typeof Chart === 'undefined') return;
+  if(canvas._chart) canvas._chart.destroy();
+
+  const now    = new Date();
+  const labels = [];
+  const months = [];
+  for(let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    labels.push(d.toLocaleString('th-TH', { month: 'short', year: '2-digit' }));
+    months.push(d);
+  }
+
+  // Per-project dataset with anomaly detection
+  const PROJ_COLORS = ['#185FA5','#3B6D11','#854F0B','#3C3489','#A32D2D','#5F5E5A'];
+  const datasets = [];
+
+  [..._bgtProjSelected].sort().forEach((proj, pi) => {
+    const data = months.map(m => {
+      return allMemos
+        .filter(memo => {
+          const d = new Date(memo.updatedAt||memo.createdAt);
+          return (memo.project||'ไม่ระบุ') === proj
+            && _bgtTypeSelected.has(memo.type)
+            && d.getFullYear() === m.getFullYear()
+            && d.getMonth() === m.getMonth();
+        })
+        .reduce((s,memo) => s+(Number(memo.total)||0), 0);
+    });
+
+    // Anomaly: flag months > 150% of 3M rolling average
+    const anomalyPoints = data.map((v, i) => {
+      if(i < 3) return false;
+      const avg = (data[i-1]+data[i-2]+data[i-3])/3;
+      return avg > 0 && v > avg * 1.5;
+    });
+
+    const color = PROJ_COLORS[pi % PROJ_COLORS.length];
+    datasets.push({
+      label: proj,
+      data,
+      borderColor: color,
+      backgroundColor: color + '22',
+      borderWidth: 2,
+      tension: 0.3,
+      fill: false,
+      pointBackgroundColor: data.map((_, i) => anomalyPoints[i] ? '#A32D2D' : color),
+      pointRadius: data.map((_, i) => anomalyPoints[i] ? 7 : 3),
+      pointBorderColor: data.map((_, i) => anomalyPoints[i] ? '#A32D2D' : color),
+    });
+  });
+
+  canvas._chart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${money(ctx.raw)}`,
+            afterLabel: (ctx) => {
+              const d = ctx.dataIndex;
+              const data = ctx.dataset.data;
+              if(d >= 3) {
+                const avg = (data[d-1]+data[d-2]+data[d-3])/3;
+                if(avg > 0 && ctx.raw > avg * 1.5) return '⚠ Anomaly: > 150% of avg';
+              }
+              return '';
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { ticks: { callback: v => '฿'+Number(v).toLocaleString('th-TH'), font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function renderBudgetProjChart(allMemos) {
+  const canvas = document.getElementById('bgt-proj-chart');
+  if(!canvas || typeof Chart === 'undefined') return;
+  if(canvas._chart) canvas._chart.destroy();
+
+  const byProj = {};
+  allMemos.filter(m => _bgtTypeSelected.has(m.type)).forEach(m => {
+    const p = m.project||'ไม่ระบุ';
+    if(!byProj[p]) byProj[p] = { count:0, total:0 };
+    byProj[p].count++; byProj[p].total += Number(m.total)||0;
+  });
+
+  const rows = Object.entries(byProj).sort((a,b) => b[1].total-a[1].total);
+  const COLORS = ['#185FA5','#3B6D11','#854F0B','#3C3489','#A32D2D','#5F5E5A','#0F6E56'];
+  const total  = rows.reduce((s,[,v]) => s+v.total, 0);
+
+  canvas._chart = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: rows.map(([p]) => p),
+      datasets: [{ data: rows.map(([,v]) => v.total), backgroundColor: COLORS, borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${money(ctx.raw)} (${Math.round(ctx.raw/total*100)}%)` } }
+      }
+    }
+  });
+
+  // Legend
+  const legend = document.getElementById('bgt-proj-legend');
+  if(legend) {
+    legend.innerHTML = rows.map(([p,v], i) => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};flex-shrink:0"></div>
+        <div style="flex:1;font-size:11px">${esc(p)}</div>
+        <div style="font-size:11px;color:var(--text-2)">${money(v.total)}</div>
+        <div style="font-size:10px;color:var(--text-3)">${Math.round(v.total/total*100)}%</div>
+      </div>`).join('');
+  }
 }
 
 function exportBudgetCsv() {
-  const range = val('#bgt-range')||'month';
+  const range   = val('#bgt-range')||'month';
   const project = val('#bgt-project')||'all';
-  const memos = getBudgetMemos(range, project);
+  const memos   = getBudgetMemos(range, project);
   if(!memos.length) { alert('ไม่มีข้อมูลสำหรับ Export'); return; }
   const headers = ['Memo No','Type','Project','Requester','Approver','Amount','Status','Date'];
-  const rows = memos.map(m=>[m.memoNo||'', String(m.type||'').toUpperCase(), m.project||'', m.requesterName||m.reviewerName||'', m.approverName||m.approvedBy||'', Number(m.total)||0, memoStatusKey(m), shortDate(m.updatedAt||m.createdAt)]);
-  const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download=`budget-${range}-${new Date().toISOString().slice(0,10)}.csv`;
+  const rows    = memos.map(m => [m.memoNo||'', String(m.type||'').toUpperCase(), m.project||'', m.requesterName||m.reviewerName||'', m.approverName||m.approvedBy||'', Number(m.total)||0, memoStatusKey(m), shortDate(m.updatedAt||m.createdAt)]);
+  const csv     = [headers,...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob    = new Blob(['\ufeff'+csv], { type:'text/csv;charset=utf-8;' });
+  const url     = URL.createObjectURL(blob);
+  const a       = document.createElement('a'); a.href=url; a.download=`budget-${range}-${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
