@@ -1098,7 +1098,6 @@ svg.icon { display: inline-block; vertical-align: middle; }
               Drafts <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
             </button>
           </div>
-          <button class="btn-sm" onclick="openBudgetSettings()" style="font-size:12px;padding:6px 12px">⚙ Budget Settings</button>
         </div>
 
         <!-- Search & Filters -->
@@ -1206,14 +1205,13 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
       <!-- ════ BUDGET ════ -->
       <div id="view-budget" class="view">
+        <!-- Filter row -->
         <div class="filter-row">
           <select id="bgt-range" onchange="renderBudget()"><option value="month">เดือนนี้</option><option value="last-month">เดือนที่แล้ว</option><option value="3-months">3 เดือน</option><option value="all">ทั้งหมด</option></select>
           <select id="bgt-project" onchange="renderBudget()"><option value="all">ทุกโครงการ</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option><option>Release 2.1</option><option>Release 3</option></select>
-          <input id="bgt-search" type="search" placeholder="ค้นหา memo/project/requester" oninput="renderBudget()">
+          <input id="bgt-search" type="search" placeholder="ค้นหา memo/project" oninput="renderBudget()">
           <select id="bgt-filter-type" onchange="renderBudget()"><option value="all">ทุกประเภท</option><option value="sl">SL</option><option value="hw">HW</option><option value="int">INT</option><option value="ent">ENT</option><option value="dep">DEP</option></select>
           <select id="bgt-filter-status" onchange="renderBudget()"><option value="all">ทุกสถานะ</option><option value="completed">completed</option><option value="pending">pending</option><option value="rejected">rejected</option><option value="cancelled">cancelled</option></select>
-          <input id="bgt-min" type="number" placeholder="ขั้นต่ำ" oninput="renderBudget()">
-          <input id="bgt-max" type="number" placeholder="สูงสุด" oninput="renderBudget()">
           <button class="btn-export" onclick="exportBudgetCsv()">Export CSV</button>
           <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="downloadTemplate('budget')" title="Download Template">⬇ Template</button>
           <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="importBulk('budget')">
@@ -1222,32 +1220,82 @@ svg.icon { display: inline-block; vertical-align: middle; }
           </button>
         </div>
 
+        <!-- KPI cards -->
         <div class="metric-row" style="grid-template-columns:repeat(4,1fr)">
           <div class="metric-card"><div class="metric-label">Approved Spend</div><div class="metric-val" id="bgt-total">฿0</div><div class="metric-sub" id="bgt-total-count">0 รายการ</div></div>
-
           <div class="metric-card"><div class="metric-label">Budget Utilization</div><div class="metric-val" id="bgt-util">0%</div><div class="metric-sub" id="bgt-near-limit">0 Projects > 80%</div></div>
         </div>
 
-
-
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px">
-          <div class="card"><div class="card-title">Monthly Trend (12 เดือน)</div><div style="height:280px"><canvas id="bgt-trend-chart"></canvas></div></div>
-          <div class="card"><div class="card-title">Spend by Type</div><div style="height:280px"><canvas id="bgt-type-chart"></canvas></div></div>
-        </div>
-        <div class="card" style="margin-bottom:12px">
-          <div class="card-title" style="margin-bottom:12px">Spend by Project — All Projects</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center">
-            <div style="height:300px"><canvas id="bgt-proj-chart"></canvas></div>
-            <div id="bgt-proj-legend" style="font-size:12px"></div>
+        <!-- Sub-tab bar -->
+        <div class="cost-tab-bar" style="margin-bottom:0">
+          <div id="bgt-subtab-bar" style="display:flex;gap:4px">
+            <button class="cost-stab active" data-tab="overview" onclick="switchBudgetTab('overview',this)">Overview</button>
+            <button class="cost-stab" data-tab="trend" onclick="switchBudgetTab('trend',this)">Trend Analysis</button>
+          </div>
+          <div style="display:flex;gap:8px;padding-bottom:6px">
+            <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="openBudgetSettings()">⚙ Budget Settings</button>
           </div>
         </div>
 
-
-        <div class="card" style="padding:0;overflow:hidden">
-          <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0"><span class="card-title">Project Financial Summary</span></div>
-          <table class="hist-table"><thead><tr><th>Project</th><th>Budget</th><th>Actual Spend</th><th>Remaining</th><th>Utilization</th><th>Status</th></tr></thead><tbody id="bgt-summary-body"></tbody></table>
+        <!-- Tab: Overview -->
+        <div id="bgt-tab-overview" class="cost-tab-panel">
+          <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px">
+            <div class="card" style="padding:16px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:12px">Budget vs Actual — รายโปรเจค</div>
+              <div style="height:260px"><canvas id="bgt-vs-actual-chart"></canvas></div>
+            </div>
+            <div class="card" style="padding:16px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:12px">Spend by Type</div>
+              <div style="height:260px"><canvas id="bgt-type-chart"></canvas></div>
+            </div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:12px;font-weight:600">Project Financial Summary</span>
+              <span style="font-size:11px;color:var(--text-3)">คลิก row เพื่อดู memo รายการย่อย</span>
+            </div>
+            <table class="hist-table">
+              <thead><tr><th>Project</th><th>Budget</th><th>Actual Spend</th><th>Remaining</th><th>Utilization</th><th>Status</th></tr></thead>
+              <tbody id="bgt-summary-body"></tbody>
+            </table>
+          </div>
         </div>
 
+        <!-- Tab: Trend Analysis -->
+        <div id="bgt-tab-trend" class="cost-tab-panel" style="display:none">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:500;color:var(--text-2)">Project overlay:</span>
+            <div id="bgt-proj-checkboxes" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+            <span style="font-size:12px;font-weight:500;color:var(--text-2);margin-left:8px">Type:</span>
+            <div id="bgt-type-checkboxes" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+          </div>
+          <div class="card" style="padding:16px;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:12px">Monthly Trend — 12 เดือน</div>
+            <div style="height:300px"><canvas id="bgt-trend-chart"></canvas></div>
+          </div>
+          <div class="card" style="padding:16px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:4px">Spend by Project</div>
+            <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">เดือนที่ spike > 150% ของ rolling average จะ highlight</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center">
+              <div style="height:300px"><canvas id="bgt-proj-chart"></canvas></div>
+              <div id="bgt-proj-legend" style="font-size:12px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drill-down panel (hidden by default) -->
+        <div id="bgt-drilldown" style="display:none;margin-top:12px">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span id="bgt-drilldown-title" style="font-size:12px;font-weight:600"></span>
+              <button class="btn-sm" style="font-size:11px;padding:3px 8px" onclick="document.getElementById('bgt-drilldown').style.display='none'">✕ ปิด</button>
+            </div>
+            <table class="hist-table">
+              <thead><tr><th>Memo No</th><th>Type</th><th>Subject</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody id="bgt-drilldown-body"></tbody>
+            </table>
+          </div>
+        </div>
 
       </div>
 
@@ -1523,11 +1571,6 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
         <!-- ── Sub-tab: Overview ── -->
         <div id="cost-tab-overview" class="cost-tab-panel">
-          <!-- Chart -->
-          <div class="card" style="padding:16px;margin-bottom:14px">
-            <div style="font-size:12px;font-weight:600;margin-bottom:12px">Monthly Actual vs Budget vs Forecast</div>
-            <div style="height:220px"><canvas id="cost-chart"></canvas></div>
-          </div>
           <!-- Cost by Project table -->
           <div class="card" style="padding:0;overflow:hidden">
             <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600">Cost by Project (Monthly)</div>
@@ -1565,7 +1608,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
         <div id="cost-tab-forecast" class="cost-tab-panel" style="display:none">
           <div class="card" style="padding:0;overflow:hidden">
             <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-              <div style="font-size:12px;font-weight:600">Year-End Forecast by Project × Program</div>
+              <div>
+                <div style="font-size:12px;font-weight:600">Year-End Forecast by Project × Program</div>
+                <div style="font-size:11px;color:var(--text-3);margin-top:2px">คำนวณจาก run rate ปัจจุบัน — ไม่รวม license ที่จะหมดอายุกลางปี</div>
+              </div>
               <div style="display:flex;gap:8px;align-items:center">
                 <select id="forecast-filter-proj" onchange="renderForecast()" style="font-family:inherit;font-size:12px;padding:4px 8px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--surface)">
                   <option value="all">ทุกโครงการ</option>
