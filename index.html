@@ -1054,6 +1054,10 @@ svg.icon { display: inline-block; vertical-align: middle; }
 
           <div class="action-row">
             <button class="btn-ghost" onclick="resetMemoForm()">ยกเลิก</button>
+            <button class="btn-sm" onclick="saveDraft()" style="font-size:13px;padding:8px 16px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save as Draft
+            </button>
             <button class="btn-primary" onclick="generateMemoPdf()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Save & Generate PDF
@@ -1067,33 +1071,30 @@ svg.icon { display: inline-block; vertical-align: middle; }
       <div id="view-pending" class="view">
         <div class="metric-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
           <div class="metric-card">
-            <div class="metric-label">รอฉันอนุมัติ</div>
+            <div class="metric-label">Awaiting My Approval</div>
             <div class="metric-val" id="pending-count" style="color:var(--amber)">0</div>
             <div class="metric-sub">ต้องดำเนินการ</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">มูลค่ารวม Pending</div>
-            <div class="metric-val" id="pending-total" style="color:var(--blue);font-size:18px">฿0</div>
-            <div class="metric-sub">รวมทุกรายการ</div>
+            <div class="metric-label">My Requests Pending Approval</div>
+            <div class="metric-val" id="pending-my-submitted" style="color:var(--blue)">0</div>
+            <div class="metric-sub">รอผู้อื่นอนุมัติ</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">เลข Memo ล่าสุด</div>
-            <div class="metric-val" id="pending-latest" style="font-size:16px;margin-top:4px">-</div>
-            <div class="metric-sub">รายการใหม่สุด</div>
+            <div class="metric-label">Drafts</div>
+            <div class="metric-val" id="pending-draft-count" style="color:var(--text-2)">0</div>
+            <div class="metric-sub">บันทึกไว้ยังไม่ส่ง</div>
           </div>
         </div>
 
         <!-- Tabs -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <div style="display:flex;gap:4px;background:var(--bg);border-radius:var(--r);padding:4px">
-            <button class="pend-tab-btn active" data-tab="awaiting" onclick="switchPendingTab('awaiting')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:var(--surface);color:var(--text)">
-              Awaiting My Approval <span class="tab-count badge badge-amber" style="margin-left:4px"></span>
-            </button>
-            <button class="pend-tab-btn" data-tab="submitted" onclick="switchPendingTab('submitted')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
+            <button class="pend-tab-btn active" data-tab="submitted" onclick="switchPendingTab('submitted')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:var(--surface);color:var(--text)">
               My Submitted <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
             </button>
-            <button class="pend-tab-btn" data-tab="rejected" onclick="switchPendingTab('rejected')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
-              Rejected <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
+            <button class="pend-tab-btn" data-tab="awaiting" onclick="switchPendingTab('awaiting')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
+              Awaiting My Approval <span class="tab-count badge badge-amber" style="margin-left:4px"></span>
             </button>
             <button class="pend-tab-btn" data-tab="drafts" onclick="switchPendingTab('drafts')" style="font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:all .15s;background:transparent;color:var(--text-2)">
               Drafts <span class="tab-count" style="margin-left:4px;font-size:11px;color:var(--text-3)"></span>
@@ -1173,8 +1174,8 @@ svg.icon { display: inline-block; vertical-align: middle; }
           </select>
           <input type="number" id="hist-amt-min" class="hist-amt-input" placeholder="ขั้นต่ำ ฿" min="0" onchange="renderHistoryMemos()">
           <input type="number" id="hist-amt-max" class="hist-amt-input" placeholder="สูงสุด ฿" min="0" onchange="renderHistoryMemos()">
-          <select id="hist-requester" onchange="renderHistoryMemos()"><option value="all">ผู้ขอทั้งหมด</option></select>
-          <select id="hist-approver" onchange="renderHistoryMemos()"><option value="all">ผู้อนุมัติทั้งหมด</option></select>
+          <select id="hist-requester" onchange="renderHistoryMemos()"><option value="all">— กรองตามผู้ขอ —</option></select>
+          <select id="hist-approver" onchange="renderHistoryMemos()"><option value="all">— กรองตามผู้อนุมัติ —</option></select>
         </div>
         <div class="card" style="padding:0;overflow:hidden" id="hist-table-wrap">
           <div class="card-head" style="padding:14px 16px 12px;border-bottom:1px solid var(--border);margin:0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -1212,7 +1213,6 @@ svg.icon { display: inline-block; vertical-align: middle; }
           <select id="bgt-project" onchange="renderBudget()"><option value="all">ทุกโครงการ</option><option>AOA-MP</option><option>TTB</option><option>Geo9</option><option>Release 2.1</option><option>Release 3</option></select>
           <input id="bgt-search" type="search" placeholder="ค้นหา memo/project" oninput="renderBudget()">
           <select id="bgt-filter-type" onchange="renderBudget()"><option value="all">ทุกประเภท</option><option value="sl">SL</option><option value="hw">HW</option><option value="int">INT</option><option value="ent">ENT</option><option value="dep">DEP</option></select>
-          <select id="bgt-filter-status" onchange="renderBudget()"><option value="all">ทุกสถานะ</option><option value="completed">completed</option><option value="pending">pending</option><option value="rejected">rejected</option><option value="cancelled">cancelled</option></select>
           <button class="btn-export" onclick="exportBudgetCsv()">Export CSV</button>
           <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="downloadTemplate('budget')" title="Download Template">⬇ Template</button>
           <button class="btn-sm" style="font-size:12px;padding:6px 12px" onclick="importBulk('budget')">
