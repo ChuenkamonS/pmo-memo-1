@@ -53,7 +53,8 @@ function renderBudget() {
   const range      = val('#bgt-range') || 'month';
   const projectSel = val('#bgt-project') || 'all';
   const all        = getBudgetMemos(range, projectSel);
-  const approved   = all.filter(m => memoStatusKey(m) === 'completed');
+  // Budget Monitor แสดงเฉพาะ approved (completed) เท่านั้น
+  const approved = all.filter(m => memoStatusKey(m) === 'completed');
 
   const approvedAmt = approved.reduce((s,m) => s+(Number(m.total)||0), 0);
   document.getElementById('bgt-total').textContent       = money(approvedAmt);
