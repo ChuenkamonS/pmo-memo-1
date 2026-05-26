@@ -327,6 +327,21 @@ function validateMemo(data) {
   if(missing.length) { alert('กรุณากรอกข้อมูลให้ครบ:\n\n• '+missing.join('\n• ')); return false; }
   return true;
 }
+// ── Save as Draft ──
+function saveDraft() {
+  if(!selectedType) { alert('กรุณาเลือกประเภท Memo ก่อน'); return; }
+  const data = collectMemoData();
+  data.status = 'draft';
+  if(!data.memoNo) {
+    data.memoNo = 'DRAFT-' + Date.now().toString(36).toUpperCase();
+  }
+  saveMemo(data);
+  renderPendingMemos();
+  alert(`✓ บันทึก Draft แล้ว — ${data.memoNo}`);
+  resetMemoForm();
+  swView('pending', document.querySelector('.sb-sub-item'), 'Pending Approval');
+}
+
 async function generateMemoPdf() {
   const data = collectMemoData();
   if(!validateMemo(data)) return;
